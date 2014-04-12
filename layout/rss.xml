@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<title>Mithril Blog</title>
+	<subtitle>A Javascript framework for building brilliant applications</subtitle>
+	<id>http://lhorie.github.io/mithril-blog</id>
+	<entry>
+		<title>Giving Mithril a voice</title>
+		<link rel="alternate" href="http://lhorie.github.io/mithril-blog/giving-mithril-a-voice.html"/>
+		<content type="html"><![CDATA[
+{DOC}
+		]]></content>
+	</entry>
+</feed>

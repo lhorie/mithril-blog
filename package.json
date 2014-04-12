@@ -1,0 +1,8 @@
+{
+	"name": "mithril-blog",
+	"version": "0.1.0",
+	"devDependencies": {
+		"grunt-cli": "*",
+		"grunt-md2html": "*"
+	}
+}
