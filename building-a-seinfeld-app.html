@@ -1,13 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-	<title>Mithril Blog</title>
-	<subtitle>A Javascript framework for building brilliant applications</subtitle>
-	<id>http://lhorie.github.io/mithril-blog</id>
-	<entry>
-		<title>Giving Mithril a voice</title>
-		<link rel="alternate" href="http://lhorie.github.io/mithril-blog/building-a-seinfeld-app.html"/>
-		<content type="html"><![CDATA[
-<h2 id="building-a-seinfeld-app">Building a &quot;Seinfeld&quot; App</h2>
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic" rel="stylesheet" />
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="building-a-seinfeld-app">Building a &quot;Seinfeld&quot; App</h2>
 <p><em>April 13, 2014</em></p>
 <p>To-do apps have become the &quot;hello world&quot; of javascript frameworks; they are easy to build and just structured enough to be a good showcase of framework features.</p>
 <p>Today we&#39;re going to take that one step further and use Mithril to build something that is a little bit more focused and a little bit more useful.</p>
@@ -320,24 +332,41 @@ m.module(document.body, chain);
 <p>If you want to build more experience with real life coding, another thing you can do is take this app and improve it so that you can track more than one activity. This is a great exercise for reading existing code and refactoring, as well as learning more about useful <a href="http://lhorie.github.io/mithril">Mithril</a> features.</p>
 <p>Remember that if you need help or have questions, you are always welcome to post in the <a href="https://groups.google.com/forum/#!forum/mithriljs">mailing list</a> or send me an <a href="https://github.com/lhorie/">email</a>.</p>
 
-		]]></content>
-	</entry>
-	<entry>
-		<title>Giving Mithril a voice</title>
-		<link rel="alternate" href="http://lhorie.github.io/mithril-blog/giving-mithril-a-voice.html"/>
-		<content type="html"><![CDATA[
-<h2 id="giving-mithril-a-voice">Giving Mithril a voice</h2>
-<p><em>April 11, 2014</em></p>
-<p>I released Mithril last month and the project has been getting generally positive feedback and some <a href="https://github.com/jpmonette/todomvc-mithril">good</a> <a href="https://github.com/insin/msx">traction</a>.</p>
-<p>There&#39;s still a lot of things I want to share with people that aren&#39;t necessarily core Mithril features, be them interesting application developement techniques, or my own experience w/ development and even open source in general, so today I&#39;m launching this blog.</p>
-<p>To give a recap of what&#39;s been happening since launch, Mithril is now a lot more accessible, being <a href="http://lhorie.github.io/mithril/installation.html">available from CDNs, and popular NodeJS package managers</a>.</p>
-<p>In addition to this blog, the <a href="https://groups.google.com/forum/#!forum/mithriljs">mailing list</a> and the <a href="https://github.com/lhorie/mithril.js/issues?state=open">Github issue tracker</a> are great places to start conversations.</p>
-<p>On the plumbing end, Mithril is now on Travis CI, and the test suite is rapidly growing. It now includes regression tests for reported bugs to ensure a stable core.</p>
-<p>For the next little while, I&#39;m hoping to nail down all the lingering bugs that contributors have been finding (particularly around the <code>m.render</code> method). Once I feel it&#39;s stable enough to bump Mithril to a v0.2, I&#39;ll have the chance to start putting more time on the plugin ecosystem, which has a really exciting pipeline: more readable and expressive templates, advanced optimization tools, a more wholesome approach to dependency management, etc - and hopefully no changes to the core codebase in order to support all of this :)</p>
-<p>If you&#39;re liking Mithril, you can help in a few different ways. The easiest is to spread the word. Another way is to try it out and report any bugs you find. You&#39;re also welcome to post topics in the mailing list or get in touch with me directly.</p>
-<p>If you want a project to take on, there&#39;s a lot of stuff that can be done in terms of plugins, and if you need help getting started, I&#39;m more than happy to help get the ball moving for you. <a href="https://github.com/lhorie/mithril.js/issues/38">This thread</a>, for example is a good starting point.</p>
-<p>In the coming weeks, I&#39;m hoping to start writing more topics about actual development, both in general, and as it relates to Mithril, so stay tuned :)</p>
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
 
-		]]></content>
-	</entry>
-</feed>
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="building-a-seinfeld-app.html">Building a "Seinfeld" app</a></li>
+								<li><a href="giving-mithril-a-voice.html">Giving Mithril a voice</a></li>
+							</ul>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

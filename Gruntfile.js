@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/giving-mithril-a-voice.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/building-a-seinfeld-app.md"], dest: "feed.xml"}]
 			}
 		}
 	});
