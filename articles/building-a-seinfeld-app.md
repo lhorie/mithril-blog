@@ -4,7 +4,7 @@
 
 To-do apps have become the "hello world" of javascript frameworks; they are easy to build and just structured enough to be a good showcase of framework features.
 
-Today we're going to take that one step further and use Mithril to build something that is a little bit more focused and a little bit more useful.
+Today we're going to take that one step further and use [Mithril](http://lhorie.github.io/mithril) to build something that is a little bit more focused and a little bit more useful.
 
 You may have heard of the ["don't break the chain" concept, made famous by comedian Jerry Seinfeld](http://lifehacker.com/281626/jerry-seinfelds-productivity-secret). The gist is this: if there's an activity you want to turn into a habit, get a calendar and put an "X" on every day that you do it. The goal is to have a lot of consecutive "X"s, with no gaps, hence "don't break the chain".
 
