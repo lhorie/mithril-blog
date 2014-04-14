@@ -401,7 +401,7 @@ From here, you can start adding polish to the app: [making it "Add to Home Scree
 
 You probably noticed that this app doesn't let you write down what is the actual activity that you are tracking. Adding a text input that lets you do so and saves this text to `localStorage` is a good homework assignment to solidify all the important concepts we covered in the article.
 
-Another thing you can do is organize the code into files and review your understanding of which MVC layer each function belongs to and why.
+Another feature that you should try to add is a button to reset the app (after all, an app that becomes useless after 49 days is no fun.)
 
 If you want to build more experience with real life coding, another thing you can do is take this app and improve it so that you can track more than one activity. This is a great exercise for reading existing code and refactoring, as well as learning more about useful [Mithril](http://lhorie.github.io/mithril) features.
 
