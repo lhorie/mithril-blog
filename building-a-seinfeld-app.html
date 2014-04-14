@@ -46,7 +46,12 @@
 <pre><code class="lang-javascript">//our app&#39;s namespace
 var chain = {};
 
-chain.view = function() {
+//model goes here
+
+//controller goes here
+
+//view
+chain.view = function(ctrl) {
     return m(&quot;table&quot;, chain.seven(function() {
         return m(&quot;tr&quot;, chain.seven(function() {
             return m(&quot;td&quot;, [
@@ -57,7 +62,8 @@ chain.view = function() {
 };
 </code></pre>
 <p>If you were coding along, you would probably notice that typing 7 table rows and 7 columns per row would result in a pretty big and repetitive template. So what we did above is define a <strong>stub</strong> method called <code>chain.seven</code> which will repeat whatever you pass to it 7 times. </p>
-<p>Stubbing basically means just calling a function that doesn&#39;t exist yet. It&#39;s a great way of cranking out some code quickly: it helps mitigate &quot;analysis paralysis&quot; by letting you focus on the easy stuff (i.e. the general DOM structure), so you can worry about the repetition stuff in isolation later. Note that implementing <code>chain.seven</code> is an easy-to-complete task if you were to stop working on this app now and came back to work on it tomorrow. This is a powerful productivity trick: if you&#39;re getting bogged down, just write a stub and move on! It helps you shift away from the all-or-nothing approach to development that stalls a lot of people and nudges you towards incremental progress. </p>
+<p>Stubbing basically means just calling a function that doesn&#39;t exist yet. It&#39;s a great way of cranking out some code quickly: it helps mitigate &quot;analysis paralysis&quot; by letting you focus on the easy stuff (i.e. the general DOM structure), so you can worry about the repetition stuff in isolation later.</p>
+<p>Note that implementing <code>chain.seven</code> is an easy-to-complete task, so it makes for a good warm-up task to get the juices going if you were to stop working on this app now and came back to work on it tomorrow. This is a powerful productivity trick: if you&#39;re getting bogged down, just write a stub and move on! It helps you shift away from the all-or-nothing approach to development that stalls a lot of people and nudges you towards incremental progress. </p>
 <p>Now that we have do have our basic grid structure figured out, we can get the <code>chain.seven</code> utility out of the way:</p>
 <pre><code class="lang-javascript">//create a helper utility that we can use in the view
 chain.seven = function(subject) {
@@ -67,12 +73,13 @@ chain.seven = function(subject) {
 };
 </code></pre>
 <p>Note that we pass the iteration index <code>i</code> as a parameter to the <code>subject</code> callback. This will be useful later.</p>
-<p>It&#39;s worth noting that KISS (&quot;keep it simple, stupid&quot;) is a strong driving principle in Mithril. Note how we didn&#39;t need to look up any framework APIs to create the <code>chain.seven</code> extension to our view language. It&#39;s just plain javascript. We can quickly make our templates as expressive and application-specific as we want. Combined w/ techniques like stubbing, you can write code almost as fast as it appears in your mind, and rely on your console&#39;s null reference exceptions as a running &quot;todo list&quot; of sorts.</p>
+<p>It&#39;s worth noting that KISS (&quot;keep it simple, stupid&quot;) is a strong driving principle in Mithril. Note how we didn&#39;t need to look up any framework APIs to create the <code>chain.seven</code> extension to our view language. It&#39;s just plain javascript. We can quickly make our templates as expressive and application-specific as we want.</p>
+<p>Combined w/ techniques like stubbing, you can write code almost as fast as it appears in your mind, and rely on your console&#39;s null reference exceptions as a running &quot;todo list&quot; of sorts.</p>
 <p>Now that we have a basic template setup, we can render it to see what it looks like:</p>
 <pre><code class="lang-javascript">//our app&#39;s namespace
 var chain = {};
 
-chain.view = function() {
+chain.view = function(ctrl) {
     return m(&quot;table&quot;, chain.seven(function() {
         return m(&quot;tr&quot;, chain.seven(function() {
             return m(&quot;td&quot;, [
@@ -172,8 +179,10 @@ var isFirstDayChecked = ctrl.isChecked(0); //is first day checked?
 ctrl.check(0, true); //check off the first day
 </code></pre>
 <p>Now that we have a controller attached to our namespace, we can actually use it as a Mithril module, i.e. we can just pass the namespace object wholesale to Mithril initializer method:</p>
-<pre><code class="lang-javascript">m.module(document.body, chain);
+<pre><code class="lang-javascript">//call this at the end of the code to initialize the `chain` app
+m.module(document.body, chain);
 </code></pre>
+<p>With this call, the controller gets instantiated and this instance is passed to the view as a parameter (the <code>ctrl</code> argument of the <code>view</code> function).</p>
 <hr>
 <h3 id="putting-it-all-together">Putting it all together</h3>
 <p>Now all we need to do is make the view layer dynamically load the data that we exposed via the controller. Normally, this is done in frameworks via what are called <strong>bi-directional data bindings</strong>.</p>
@@ -205,6 +214,10 @@ ctrl.check(0, true); //check off the first day
 }
 </code></pre>
 <p>This should be enough to make the UI dynamic: you should be able to check off a box, refresh the page and see that it retained its state.</p>
+<p>Before we continue, let me just me a note about data bindings. Most frameworks have generic binding syntax, but they&#39;re often prescriptive and inflexible.</p>
+<p>Creating our own custom bindings like we did above has a lot of advantages: we can have super expressive code that reads almost like prose - <code>m(&quot;input[type=checkbox]&quot;, chain.checks(ctrl, chain.indexAt(x, y)))</code> is roughly &quot;a checkbox that checks the index that corresponds to these x and y coordinates&quot;</p>
+<p>In addition, we can maintain full control over the implementation, and we can keep these implementation details neatly tucked in the view layer, rather than pollute the controller layer or having to create other complexity layers.</p>
+<hr>
 <p>One last thing we can do to make the app more usable is highlight the checkbox that corresponds to the current day. Let&#39;s write another data binding for this:</p>
 <pre><code class="lang-javascript">chain.highlights = function(index) {
     return {
@@ -227,7 +240,7 @@ ctrl.check(0, true); //check off the first day
     }));
 };
 </code></pre>
-<p>This last binding is noteworthy for a few reasons: for one thing, it illustrates how we can easily refactor away noisy template snippets - I mean, really, who likes inline style attributes? :)</p>
+<p>This last binding is noteworthy for a few reasons: for one thing, it illustrates how we can easily tuck away noisy template snippets - I mean, really, who likes inline style attributes? :)</p>
 <p>Another thing to notice is that despite this snippet being part of the view layer (conceptually), it accesses the model directly (it calls <code>chain.today</code>) without going through the controller. Logically, the concept of &quot;today&quot; doesn&#39;t need class instantiation management, so it&#39;s perfectly reasonable to skip controller bureaucracy for it altogether.</p>
 <p>The last thing to note is that because our views are plain javascript, things like caching computed values (<code>var index</code> in our case) are easy to do and completely transparent, so it&#39;s highly unlikely that you would ever run into <a href="http://stackoverflow.com/questions/14376879/error-10-digest-iterations-reached-aborting-with-dynamic-sortby-predicate">bizarre problems</a>.</p>
 <hr>

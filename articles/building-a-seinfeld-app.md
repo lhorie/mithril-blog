@@ -39,7 +39,12 @@ Here's what we might want our grid template to look like:
 //our app's namespace
 var chain = {};
 
-chain.view = function() {
+//model goes here
+
+//controller goes here
+
+//view
+chain.view = function(ctrl) {
 	return m("table", chain.seven(function() {
 		return m("tr", chain.seven(function() {
 			return m("td", [
@@ -52,7 +57,9 @@ chain.view = function() {
 
 If you were coding along, you would probably notice that typing 7 table rows and 7 columns per row would result in a pretty big and repetitive template. So what we did above is define a **stub** method called `chain.seven` which will repeat whatever you pass to it 7 times. 
 
-Stubbing basically means just calling a function that doesn't exist yet. It's a great way of cranking out some code quickly: it helps mitigate "analysis paralysis" by letting you focus on the easy stuff (i.e. the general DOM structure), so you can worry about the repetition stuff in isolation later. Note that implementing `chain.seven` is an easy-to-complete task if you were to stop working on this app now and came back to work on it tomorrow. This is a powerful productivity trick: if you're getting bogged down, just write a stub and move on! It helps you shift away from the all-or-nothing approach to development that stalls a lot of people and nudges you towards incremental progress. 
+Stubbing basically means just calling a function that doesn't exist yet. It's a great way of cranking out some code quickly: it helps mitigate "analysis paralysis" by letting you focus on the easy stuff (i.e. the general DOM structure), so you can worry about the repetition stuff in isolation later.
+
+Note that implementing `chain.seven` is an easy-to-complete task, so it makes for a good warm-up task to get the juices going if you were to stop working on this app now and came back to work on it tomorrow. This is a powerful productivity trick: if you're getting bogged down, just write a stub and move on! It helps you shift away from the all-or-nothing approach to development that stalls a lot of people and nudges you towards incremental progress. 
 
 Now that we have do have our basic grid structure figured out, we can get the `chain.seven` utility out of the way:
 
@@ -67,7 +74,9 @@ chain.seven = function(subject) {
 
 Note that we pass the iteration index `i` as a parameter to the `subject` callback. This will be useful later.
 
-It's worth noting that KISS ("keep it simple, stupid") is a strong driving principle in Mithril. Note how we didn't need to look up any framework APIs to create the `chain.seven` extension to our view language. It's just plain javascript. We can quickly make our templates as expressive and application-specific as we want. Combined w/ techniques like stubbing, you can write code almost as fast as it appears in your mind, and rely on your console's null reference exceptions as a running "todo list" of sorts.
+It's worth noting that KISS ("keep it simple, stupid") is a strong driving principle in Mithril. Note how we didn't need to look up any framework APIs to create the `chain.seven` extension to our view language. It's just plain javascript. We can quickly make our templates as expressive and application-specific as we want.
+
+Combined w/ techniques like stubbing, you can write code almost as fast as it appears in your mind, and rely on your console's null reference exceptions as a running "todo list" of sorts.
 
 Now that we have a basic template setup, we can render it to see what it looks like:
 
@@ -75,7 +84,7 @@ Now that we have a basic template setup, we can render it to see what it looks l
 //our app's namespace
 var chain = {};
 
-chain.view = function() {
+chain.view = function(ctrl) {
 	return m("table", chain.seven(function() {
 		return m("tr", chain.seven(function() {
 			return m("td", [
@@ -209,8 +218,11 @@ ctrl.check(0, true); //check off the first day
 Now that we have a controller attached to our namespace, we can actually use it as a Mithril module, i.e. we can just pass the namespace object wholesale to Mithril initializer method:
 
 ```javascript
+//call this at the end of the code to initialize the `chain` app
 m.module(document.body, chain);
 ```
+
+With this call, the controller gets instantiated and this instance is passed to the view as a parameter (the `ctrl` argument of the `view` function).
 
 ---
 
@@ -259,6 +271,14 @@ chain.indexAt = function(x, y) {
 
 This should be enough to make the UI dynamic: you should be able to check off a box, refresh the page and see that it retained its state.
 
+Before we continue, let me just me a note about data bindings. Most frameworks have generic binding syntax, but they're often prescriptive and inflexible.
+
+Creating our own custom bindings like we did above has a lot of advantages: we can have super expressive code that reads almost like prose - `m("input[type=checkbox]", chain.checks(ctrl, chain.indexAt(x, y)))` is roughly "a checkbox that checks the index that corresponds to these x and y coordinates"
+
+In addition, we can maintain full control over the implementation, and we can keep these implementation details neatly tucked in the view layer, rather than pollute the controller layer or having to create other complexity layers.
+
+---
+
 One last thing we can do to make the app more usable is highlight the checkbox that corresponds to the current day. Let's write another data binding for this:
 
 ```javascript
@@ -288,7 +308,7 @@ chain.view = function(ctrl) {
 };
 ```
 
-This last binding is noteworthy for a few reasons: for one thing, it illustrates how we can easily refactor away noisy template snippets - I mean, really, who likes inline style attributes? :)
+This last binding is noteworthy for a few reasons: for one thing, it illustrates how we can easily tuck away noisy template snippets - I mean, really, who likes inline style attributes? :)
 
 Another thing to notice is that despite this snippet being part of the view layer (conceptually), it accesses the model directly (it calls `chain.today`) without going through the controller. Logically, the concept of "today" doesn't need class instantiation management, so it's perfectly reasonable to skip controller bureaucracy for it altogether.
 
