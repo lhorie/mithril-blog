@@ -1,19 +1,20 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-	<title>Mithril Blog</title>
-	<subtitle>A Javascript framework for building brilliant applications</subtitle>
-	<id>http://lhorie.github.io/mithril-blog</id>
-	<entry>
-		<title>Giving Mithril a voice</title>
-		<link rel="alternate" href="http://lhorie.github.io/mithril-blog/building-a-seinfeld-app.html"/>
-		<content type="html"><![CDATA[
+<rss version="2.0">
+	<channel>
+		<title>Mithril Blog</title>
+		<description>A Javascript framework for building brilliant applications</description>
+		<link>http://lhorie.github.io/mithril-blog/</link>
+		<item>
+			<title>Building a "Seinfeld" App</title>
+			<link>http://lhorie.github.io/mithril-blog/building-a-seinfeld-app.html</link>
+			<description><![CDATA[
 {DOC}
-		]]></content>
-	</entry>
-	<entry>
-		<title>Giving Mithril a voice</title>
-		<link rel="alternate" href="http://lhorie.github.io/mithril-blog/giving-mithril-a-voice.html"/>
-		<content type="html"><![CDATA[
+			]]></description>
+		</item>
+		<item>
+			<title>Giving Mithril a voice</title>
+			<link>http://lhorie.github.io/mithril-blog/giving-mithril-a-voice.html</link>
+			<description><![CDATA[
 <h2 id="giving-mithril-a-voice">Giving Mithril a voice</h2>
 <p><em>April 11, 2014</em></p>
 <p>I released Mithril last month and the project has been getting generally positive feedback and some <a href="https://github.com/jpmonette/todomvc-mithril">good</a> <a href="https://github.com/insin/msx">traction</a>.</p>
@@ -26,6 +27,7 @@
 <p>If you want a project to take on, there&#39;s a lot of stuff that can be done in terms of plugins, and if you need help getting started, I&#39;m more than happy to help get the ball moving for you. <a href="https://github.com/lhorie/mithril.js/issues/38">This thread</a>, for example is a good starting point.</p>
 <p>In the coming weeks, I&#39;m hoping to start writing more topics about actual development, both in general, and as it relates to Mithril, so stay tuned :)</p>
 
-		]]></content>
-	</entry>
-</feed>
+			]]></description>
+		</item>
+	</channel>
+</rss>
