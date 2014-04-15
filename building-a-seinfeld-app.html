@@ -5,6 +5,7 @@
 		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic" rel="stylesheet" />
 		<link href="lib/prism/prism.css" rel="stylesheet" />
 		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
 	</head>
 	<body>
 		<header>
@@ -198,7 +199,7 @@ m.module(document.body, chain);
 }
 </code></pre>
 <p>Now we can use this binding in the template we created at the beginning:</p>
-<pre><code>chain.view = function(ctrl) {
+<pre><code class="lang-javascript">chain.view = function(ctrl) {
     return m(&quot;table&quot;, chain.seven(function(y) {
         return m(&quot;tr&quot;, chain.seven(function(x) {
             return m(&quot;td&quot;, [
@@ -207,7 +208,8 @@ m.module(document.body, chain);
         }));
     }));
 };
-</code></pre><p>If you have been paying attention you probably noticed that we just defined another stub called <code>chain.indexAt</code>: our template doesn&#39;t expose the raw offset that we need for our model API, but the <code>chain.seven</code>&#39;s callback argument can be used to compute it.</p>
+</code></pre>
+<p>If you have been paying attention you probably noticed that we just defined another stub called <code>chain.indexAt</code>: our template doesn&#39;t expose the raw offset that we need for our model API, but the <code>chain.seven</code>&#39;s callback argument can be used to compute it.</p>
 <p><code>chain.indexAt(x, y)</code> will need to take a grid position and return the appropriate flat-list index, assuming that the days are counted like in a regular calendar.</p>
 <pre><code class="lang-javascript">chain.indexAt = function(x, y) {
     return y * 7 + x;
@@ -325,7 +327,15 @@ chain.checks = function(ctrl, index) {
         },
         checked: ctrl.isChecked(index)
     };
-}
+};
+
+chain.highlights = function(index) {
+    return {
+        style: {
+            background: chain.dateAt(index).getTime() == chain.today().getTime() ? &quot;silver&quot; : &quot;&quot;
+        }
+    };
+};
 
 chain.indexAt = function(x, y) {
     return y * 7 + x;
@@ -369,6 +379,8 @@ m.module(document.body, chain);
 								<li><a href="building-a-seinfeld-app.html">Building a "Seinfeld" app</a></li>
 								<li><a href="giving-mithril-a-voice.html">Giving Mithril a voice</a></li>
 							</ul>
+							<hr />
+							<a href="feed.xml">Atom Feed</a>
 						</div>
 					</div>
    

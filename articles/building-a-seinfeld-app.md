@@ -247,7 +247,7 @@ chain.checks = function(ctrl, index) {
 
 Now we can use this binding in the template we created at the beginning:
 
-```
+```javascript
 chain.view = function(ctrl) {
 	return m("table", chain.seven(function(y) {
 		return m("tr", chain.seven(function(x) {
@@ -400,7 +400,15 @@ chain.checks = function(ctrl, index) {
 		},
 		checked: ctrl.isChecked(index)
 	};
-}
+};
+
+chain.highlights = function(index) {
+	return {
+		style: {
+			background: chain.dateAt(index).getTime() == chain.today().getTime() ? "silver" : ""
+		}
+	};
+};
 
 chain.indexAt = function(x, y) {
 	return y * 7 + x;
