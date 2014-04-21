@@ -123,7 +123,7 @@ localStorage.bar = {a: 1} // "[object Object]"
 
 Our app consists of 49 days, which can be either marked with an "X", or not. So what we need to do is persist a list of booleans. Since LocalStorage has no concept of fetching a subset of a data list, the simplest storage implementation would be something like this:
 
-```
+```javascript
 //a list model API
 chain.save = function(list) {
 	localStorage["chain-app.list"] = JSON.stringify(list);
@@ -176,7 +176,6 @@ var isToday = chain.dateAt(3).getTime() === chain.today() //is three days from n
 
 //reset
 var newStartDate = chain.resetDate(); //new start date is today
-
 ```
 
 Again, note how we didn't need to use any framework code in the model layer. We could have used classes, but we're just creating an API without them to illustrate the point that it's perfectly possible to maintain the MVC pattern while prototyping, without the need for bureaucracy. As long as our APIs are simple and well defined, we can always refactor later.
@@ -320,7 +319,7 @@ The last thing to note is that because our views are plain javascript, things li
 
 This is pretty much all we need to have a working app. Here's the code in its entirety:
 
-```javascript
+```markup
 <!doctype html>
 <html>
 	<head>

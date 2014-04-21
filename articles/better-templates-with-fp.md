@@ -49,7 +49,7 @@ var layout = function(nav, body) {
 
 And sub-templates that look like this:
 
-```
+```javascript
 var nav = function() {
 	return [
 		"nav here"
@@ -106,7 +106,7 @@ This technique becomes very powerful when using [components](http://lhorie.githu
 
 By writing the login widget's template as a self-contained function as we saw above, we can attach a layout for the standalone login page, and we can just include the naked template as a component in our modal dialog. No copy-pasta required.
 
-```
+```javascript
 //the widget template
 var loginWidget = function() {
 	return [

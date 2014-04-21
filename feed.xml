@@ -45,7 +45,7 @@ m.module(document, {controller: function() {}, view: layout});
 };
 </code></pre>
 <p>And sub-templates that look like this:</p>
-<pre><code>var nav = function() {
+<pre><code class="lang-javascript">var nav = function() {
     return [
         &quot;nav here&quot;
     ];
@@ -55,7 +55,8 @@ var body = function() {
         &quot;body here&quot;
     ];
 };
-</code></pre><p>By organizing our code like this, the sub-templates don&#39;t need to be cluttered with explicit layout references, and the layout can flexibly render different navs and bodies as our app grows in complexity. In other words, organizing our code this way gives us nice and modular templates.</p>
+</code></pre>
+<p>By organizing our code like this, the sub-templates don&#39;t need to be cluttered with explicit layout references, and the layout can flexibly render different navs and bodies as our app grows in complexity. In other words, organizing our code this way gives us nice and modular templates.</p>
 <p>So all we need now is a glue to put together these nice modular pieces of code together.</p>
 <p>Since functions are first class citizens in Javascript, we can create a <strong>higher order function</strong> - a function that works with functions - to do that for us:</p>
 <pre><code class="lang-javascript">var mixinLayout = function(layout, nav, body) {
@@ -86,7 +87,7 @@ m.route(document, &quot;/foo&quot;, {
 <h3 id="advanced-usage">Advanced usage</h3>
 <p>This technique becomes very powerful when using <a href="http://lhorie.github.io/mithril/components.html">components</a> to organize code. For example, you might have a widget that lives in its own page (e.g. a login widget), but this widget may also appear in a modal dialog somewhere else in the site.</p>
 <p>By writing the login widget&#39;s template as a self-contained function as we saw above, we can attach a layout for the standalone login page, and we can just include the naked template as a component in our modal dialog. No copy-pasta required.</p>
-<pre><code>//the widget template
+<pre><code class="lang-javascript">//the widget template
 var loginWidget = function() {
     return [
         m(&quot;input[placeholder=&#39;Username&#39;]&quot;),
@@ -110,7 +111,8 @@ anotherPlace.view = function() {
         &quot;stuff after&quot;
     ]
 }
-</code></pre><p>It&#39;s worth noting that even though I call this an example of &quot;advanced usage&quot; and throw around fancy words like &quot;components&quot;, the code itself is actually surprisingly straightforward.</p>
+</code></pre>
+<p>It&#39;s worth noting that even though I call this an example of &quot;advanced usage&quot; and throw around fancy words like &quot;components&quot;, the code itself is actually surprisingly straightforward.</p>
 <p>Hopefully this article sheds some light into ways to keep templates DRY, and how Mithril&#39;s simplicity can help achieve that goal.</p>
 
 			]]></description>

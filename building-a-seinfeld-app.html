@@ -110,14 +110,15 @@ localStorage.foo = [1, 2, 3] // &quot;1,2,3&quot;
 localStorage.bar = {a: 1} // &quot;[object Object]&quot;
 </code></pre>
 <p>Our app consists of 49 days, which can be either marked with an &quot;X&quot;, or not. So what we need to do is persist a list of booleans. Since LocalStorage has no concept of fetching a subset of a data list, the simplest storage implementation would be something like this:</p>
-<pre><code>//a list model API
+<pre><code class="lang-javascript">//a list model API
 chain.save = function(list) {
     localStorage[&quot;chain-app.list&quot;] = JSON.stringify(list);
 };
 chain.load = function() {
     return JSON.parse(localStorage[&quot;chain-app.list&quot;] || &quot;[]&quot;);
 };
-</code></pre><p>This API can be used like this:</p>
+</code></pre>
+<p>This API can be used like this:</p>
 <pre><code class="lang-javascript">var list = chain.load();
 list[42] = true; //set the 42nd day
 chain.save(list);
@@ -248,7 +249,7 @@ m.module(document.body, chain);
 <hr>
 <h3 id="conclusion">Conclusion</h3>
 <p>This is pretty much all we need to have a working app. Here&#39;s the code in its entirety:</p>
-<pre><code class="lang-javascript">&lt;!doctype html&gt;
+<pre><code class="lang-markup">&lt;!doctype html&gt;
 &lt;html&gt;
     &lt;head&gt;
         &lt;title&gt;Don&#39;t break the chain&lt;/title&gt;
