@@ -5,10 +5,351 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Better templates with FP</title>
+			<link>http://lhorie.github.io/mithril-blog/better-templates-with-fp.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Building a "Seinfeld" App</title>
 			<link>http://lhorie.github.io/mithril-blog/building-a-seinfeld-app.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="building-a-seinfeld-app">Building a &quot;Seinfeld&quot; App</h2>
+<p><em>April 13, 2014</em></p>
+<p>To-do apps have become the &quot;hello world&quot; of javascript frameworks; they are easy to build and just structured enough to be a good showcase of framework features.</p>
+<p>Today we&#39;re going to take that one step further and use <a href="http://lhorie.github.io/mithril">Mithril</a> to build something that is a little bit more focused and a little bit more useful.</p>
+<p>You may have heard of the <a href="http://lifehacker.com/281626/jerry-seinfelds-productivity-secret">&quot;don&#39;t break the chain&quot; concept, made famous by comedian Jerry Seinfeld</a>. The gist is this: if there&#39;s an activity you want to turn into a habit, get a calendar and put an &quot;X&quot; on every day that you do it. The goal is to have a lot of consecutive &quot;X&quot;s, with no gaps, hence &quot;don&#39;t break the chain&quot;.</p>
+<p>The rationale behind this is that a lot of people have trouble sticking with something for long periods of time due to lack of focus or prioritization tools or whatever. Seinfeld&#39;s trick just makes use of gamification to nudge us to be more persistent than we perhaps would be without the aid of a tool. So that&#39;s what we&#39;re gonna build.</p>
+<hr>
+<h3 id="view-layer">View layer</h3>
+<p>Let&#39;s start by creating an HTML file:</p>
+<pre><code class="lang-markup">&lt;!doctype html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Don&#39;t break the chain&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script src=&quot;mithril.js&quot;&gt;&lt;/script&gt;
+        &lt;script&gt;
+        //app goes here
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>There&#39;s really no consensus on the number of days needed to actually form a habit, so let&#39;s just build a 7x7 grid because 7 days per week is familiar and squares are pretty.</p>
+<p>Here&#39;s what we might want our grid template to look like:</p>
+<pre><code class="lang-javascript">//our app&#39;s namespace
+var chain = {};
+
+//model goes here
+
+//controller goes here
+
+//view
+chain.view = function(ctrl) {
+    return m(&quot;table&quot;, chain.seven(function() {
+        return m(&quot;tr&quot;, chain.seven(function() {
+            return m(&quot;td&quot;, [
+                m(&quot;input[type=checkbox]&quot;)
+            ]);
+        });
+    });
+};
+</code></pre>
+<p>If you were coding along, you would probably notice that typing 7 table rows and 7 columns per row would result in a pretty big and repetitive template. So what we did above is define a <strong>stub</strong> method called <code>chain.seven</code> which will repeat whatever you pass to it 7 times. </p>
+<p>Stubbing basically means just calling a function that doesn&#39;t exist yet. It&#39;s a great way of cranking out some code quickly: it helps mitigate &quot;analysis paralysis&quot; by letting you focus on the easy stuff (i.e. the general DOM structure), so you can worry about the repetition stuff in isolation later.</p>
+<p>Note that implementing <code>chain.seven</code> is an easy-to-complete task, so it makes for a good warm-up task to get the juices going if you were to stop working on this app now and came back to work on it tomorrow. This is a powerful productivity trick: if you&#39;re getting bogged down, just write a stub and move on! It helps you shift away from the all-or-nothing approach to development that stalls a lot of people and nudges you towards incremental progress. </p>
+<p>Now that we have do have our basic grid structure figured out, we can get the <code>chain.seven</code> utility out of the way:</p>
+<pre><code class="lang-javascript">//create a helper utility that we can use in the view
+chain.seven = function(subject) {
+    var output = [];
+    for (var i = 0; i &lt; 7; i++) output.push(subject(i));
+    return output;
+};
+</code></pre>
+<p>Note that we pass the iteration index <code>i</code> as a parameter to the <code>subject</code> callback. This will be useful later.</p>
+<p>It&#39;s worth noting that KISS (&quot;keep it simple, stupid&quot;) is a strong driving principle in Mithril. Note how we didn&#39;t need to look up any framework APIs to create the <code>chain.seven</code> extension to our view language. It&#39;s just plain javascript. We can quickly make our templates as expressive and application-specific as we want.</p>
+<p>Combined w/ techniques like stubbing, you can write code almost as fast as it appears in your mind, and rely on your console&#39;s null reference exceptions as a running &quot;todo list&quot; of sorts.</p>
+<p>Now that we have a basic template setup, we can render it to see what it looks like:</p>
+<pre><code class="lang-javascript">//our app&#39;s namespace
+var chain = {};
+
+chain.view = function(ctrl) {
+    return m(&quot;table&quot;, chain.seven(function() {
+        return m(&quot;tr&quot;, chain.seven(function() {
+            return m(&quot;td&quot;, [
+                m(&quot;input[type=checkbox]&quot;)
+            ]);
+        }));
+    }));
+};
+
+//create a helper utility that we can use in the view
+chain.seven = function(subject) {
+    var output = [];
+    for (var i = 0; i &lt; 7; i++) output.push(subject(i));
+    return output;
+};
+
+//render it
+m.module(document.body, {controller: function() {}, view: chain.view});
+</code></pre>
+<hr>
+<h3 id="model-layer">Model layer</h3>
+<p>Now we can start thinking about functionality. Our app is pretty simple: all we need to do is make checkboxes retain their states after they&#39;ve been checked.</p>
+<p>Since it&#39;s highly unlikely that anyone is ever going to keep the app running for days on end, we need a persistence layer. The simplest thing we can use is <code>LocalStorage</code>. It doesn&#39;t work in older browsers, but we don&#39;t want to get bogged down setting up a database for a tutorial app that we&#39;re probably only going to use in our own smartphones, so it&#39;s adequate enough.</p>
+<p>The LocalStorage API is pretty straightforward. If you add a property to the <code>localStorage</code> object, its value is cast to a string:</p>
+<pre><code class="lang-javascript">localStorage.test = 1 // &quot;1&quot;
+localStorage.foo = [1, 2, 3] // &quot;1,2,3&quot;
+localStorage.bar = {a: 1} // &quot;[object Object]&quot;
+</code></pre>
+<p>Our app consists of 49 days, which can be either marked with an &quot;X&quot;, or not. So what we need to do is persist a list of booleans. Since LocalStorage has no concept of fetching a subset of a data list, the simplest storage implementation would be something like this:</p>
+<pre><code>//a list model API
+chain.save = function(list) {
+    localStorage[&quot;chain-app.list&quot;] = JSON.stringify(list);
+};
+chain.load = function() {
+    return JSON.parse(localStorage[&quot;chain-app.list&quot;] || &quot;[]&quot;);
+};
+</code></pre><p>This API can be used like this:</p>
+<pre><code class="lang-javascript">var list = chain.load();
+list[42] = true; //set the 42nd day
+chain.save(list);
+
+//reset the list
+chain.save([]);
+</code></pre>
+<p>In addition to the actual list of checks, we also need to know when our chain started. So we also need an auxiliary model entity to store the start date.</p>
+<pre><code class="lang-javascript">//a date model API
+chain.today = function() {
+    var now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+}
+chain.resetDate = function() {
+    return localStorage[&quot;chain-app.start-date&quot;] = chain.today().getTime();
+}
+chain.startDate = function() {
+    return new Date(parseInt(localStorage[&quot;chain-app.start-date&quot;] || chain.resetDate()));
+}
+chain.dateAt = function(index) {
+    var date = new Date(chain.startDate());
+    date.setDate(date.getDate() + index);
+    return date;
+}
+</code></pre>
+<p>This API can be used like this:</p>
+<pre><code class="lang-javascript">var today = chain.today() //today at midnight
+
+var startDate = chain.startDate(); //start date is today
+
+var isToday = chain.dateAt(3).getTime() === chain.today() //is three days from now the same as today? Should be false
+
+//reset
+var newStartDate = chain.resetDate(); //new start date is today
+</code></pre>
+<p>Again, note how we didn&#39;t need to use any framework code in the model layer. We could have used classes, but we&#39;re just creating an API without them to illustrate the point that it&#39;s perfectly possible to maintain the MVC pattern while prototyping, without the need for bureaucracy. As long as our APIs are simple and well defined, we can always refactor later.</p>
+<hr>
+<h3 id="controller-layer">Controller layer</h3>
+<p>In Mithril, controllers are typically meant to be the glue between the model and view layer. Here&#39;s one way to implement it:</p>
+<pre><code class="lang-javascript">chain.controller = function() {
+    var list = chain.load();
+
+    this.isChecked = function(index) {
+        return list[index]
+    };
+    this.check = function(index, status) {
+        if (chain.dateAt(index).getTime() &lt;= chain.today().getTime()) {
+            list[index] = status;
+            chain.save(list);
+        }
+    };
+};
+</code></pre>
+<p>Our controller doesn&#39;t actually expose the raw list from the model. Instead it implements a <code>isChecked</code> method to read the state for a given day, and a <code>check</code> method to set it (with some validation to prevent setting days in the future).</p>
+<p>With this API, we are able to expose all the model data that we need to the view. Below is an example of how this controller API can be used:</p>
+<pre><code class="lang-javascript">var ctrl = new chain.controller();
+
+var isFirstDayChecked = ctrl.isChecked(0); //is first day checked?
+
+ctrl.check(0, true); //check off the first day
+</code></pre>
+<p>Now that we have a controller attached to our namespace, we can actually use it as a Mithril module, i.e. we can just pass the namespace object wholesale to Mithril initializer method:</p>
+<pre><code class="lang-javascript">//call this at the end of the code to initialize the `chain` app
+m.module(document.body, chain);
+</code></pre>
+<p>With this call, the controller gets instantiated and this instance is passed to the view as a parameter (the <code>ctrl</code> argument of the <code>view</code> function).</p>
+<hr>
+<h3 id="putting-it-all-together">Putting it all together</h3>
+<p>Now all we need to do is make the view layer dynamically load the data that we exposed via the controller. Normally, this is done in frameworks via what are called <strong>bi-directional data bindings</strong>.</p>
+<p>A bi-directional data binding is really just a fancy way of saying that a DOM element has code attached to it that sets its value based on our model data, and an event handler to update the model data when a UI change happens.</p>
+<p>Here&#39;s a simple binding helper function: it returns the set of attributes needed to do bi-directional data binding based on a controller instance and an model layer&#39;s list index.</p>
+<pre><code class="lang-javascript">chain.checks = function(ctrl, index) {
+    return {
+        onclick: function() {
+            ctrl.check(index, this.checked);
+        },
+        checked: ctrl.isChecked(index)
+    };
+}
+</code></pre>
+<p>Now we can use this binding in the template we created at the beginning:</p>
+<pre><code class="lang-javascript">chain.view = function(ctrl) {
+    return m(&quot;table&quot;, chain.seven(function(y) {
+        return m(&quot;tr&quot;, chain.seven(function(x) {
+            return m(&quot;td&quot;, [
+                m(&quot;input[type=checkbox]&quot;, chain.checks(ctrl, chain.indexAt(x, y)))
+            ]);
+        }));
+    }));
+};
+</code></pre>
+<p>If you have been paying attention you probably noticed that we just defined another stub called <code>chain.indexAt</code>: our template doesn&#39;t expose the raw offset that we need for our model API, but the <code>chain.seven</code>&#39;s callback argument can be used to compute it.</p>
+<p><code>chain.indexAt(x, y)</code> will need to take a grid position and return the appropriate flat-list index, assuming that the days are counted like in a regular calendar.</p>
+<pre><code class="lang-javascript">chain.indexAt = function(x, y) {
+    return y * 7 + x;
+}
+</code></pre>
+<p>This should be enough to make the UI dynamic: you should be able to check off a box, refresh the page and see that it retained its state.</p>
+<p>Before we continue, let me just me a note about data bindings. Most frameworks have generic binding syntax, but they&#39;re often prescriptive and inflexible.</p>
+<p>Creating our own custom bindings like we did above has a lot of advantages: we can have super expressive code that reads almost like prose - <code>m(&quot;input[type=checkbox]&quot;, chain.checks(ctrl, chain.indexAt(x, y)))</code> is roughly &quot;a checkbox that checks the index that corresponds to these x and y coordinates&quot;</p>
+<p>In addition, we can maintain full control over the implementation, and we can keep these implementation details neatly tucked in the view layer, rather than pollute the controller layer or having to create other complexity layers.</p>
+<hr>
+<p>One last thing we can do to make the app more usable is highlight the checkbox that corresponds to the current day. Let&#39;s write another data binding for this:</p>
+<pre><code class="lang-javascript">chain.highlights = function(index) {
+    return {
+        style: {
+            background: chain.dateAt(index).getTime() == chain.today().getTime() ? &quot;silver&quot; : &quot;&quot;
+        }
+    };
+};
+</code></pre>
+<p>Notice that this binding is not bi-directional - it doesn&#39;t need an event handler. All it does is set a background color based on whether the cell corresponds to today.</p>
+<p>We can then refactor our view to use our new binding:</p>
+<pre><code class="lang-javascript">chain.view = function(ctrl) {
+    return m(&quot;table&quot;, chain.seven(function(y) {
+        return m(&quot;tr&quot;, chain.seven(function(x) {
+            var index = chain.indexAt(x, y)
+            return m(&quot;td&quot;, chain.highlights(index), [
+                m(&quot;input[type=checkbox]&quot;, chain.checks(ctrl, index))
+            ]);
+        }));
+    }));
+};
+</code></pre>
+<p>This last binding is noteworthy for a few reasons: for one thing, it illustrates how we can easily tuck away noisy template snippets - I mean, really, who likes inline style attributes? :)</p>
+<p>Another thing to notice is that despite this snippet being part of the view layer (conceptually), it accesses the model directly (it calls <code>chain.today</code>) without going through the controller. Logically, the concept of &quot;today&quot; doesn&#39;t need class instantiation management, so it&#39;s perfectly reasonable to skip controller bureaucracy for it altogether.</p>
+<p>The last thing to note is that because our views are plain javascript, things like caching computed values (<code>var index</code> in our case) are easy to do and completely transparent, so it&#39;s highly unlikely that you would ever run into <a href="http://stackoverflow.com/questions/14376879/error-10-digest-iterations-reached-aborting-with-dynamic-sortby-predicate">bizarre problems</a>.</p>
+<hr>
+<h3 id="conclusion">Conclusion</h3>
+<p>This is pretty much all we need to have a working app. Here&#39;s the code in its entirety:</p>
+<pre><code class="lang-javascript">&lt;!doctype html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Don&#39;t break the chain&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script src=&quot;mithril.js&quot;&gt;&lt;/script&gt;
+        &lt;script&gt;
+//our app&#39;s namespace
+var chain = {};
+
+//model
+chain.save = function(list) {
+    localStorage[&quot;chain-app.list&quot;] = JSON.stringify(list);
+};
+chain.load = function() {
+    return JSON.parse(localStorage[&quot;chain-app.list&quot;] || &quot;[]&quot;);
+};
+
+chain.today = function() {
+    var now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+}
+chain.resetDate = function() {
+    return localStorage[&quot;chain-app.start-date&quot;] = chain.today().getTime();
+}
+chain.startDate = function() {
+    return new Date(parseInt(localStorage[&quot;chain-app.start-date&quot;] || chain.resetDate()));
+}
+chain.dateAt = function(index) {
+    var date = new Date(chain.startDate());
+    date.setDate(date.getDate() + index);
+    return date;
+}
+
+
+
+//controller
+chain.controller = function() {
+    var list = chain.load();
+
+    this.isChecked = function(index) {
+        return list[index]
+    };
+    this.check = function(index, status) {
+        if (chain.dateAt(index).getTime() &lt;= chain.today().getTime()) {
+            list[index] = status;
+            chain.save(list);
+        }
+    };
+};
+
+
+
+//view
+chain.view = function(ctrl) {
+    return m(&quot;table&quot;, chain.seven(function(y) {
+        return m(&quot;tr&quot;, chain.seven(function(x) {
+            var index = chain.indexAt(x, y)
+            return m(&quot;td&quot;, chain.highlights(index), [
+                m(&quot;input[type=checkbox]&quot;, chain.checks(ctrl, index))
+            ]);
+        }));
+    }));
+};
+
+chain.seven = function(subject) {
+    var output = [];
+    for (var i = 0; i &lt; 7; i++) output.push(subject(i));
+    return output;
+};
+
+chain.checks = function(ctrl, index) {
+    return {
+        onclick: function() {
+            ctrl.check(index, this.checked);
+        },
+        checked: ctrl.isChecked(index)
+    };
+};
+
+chain.highlights = function(index) {
+    return {
+        style: {
+            background: chain.dateAt(index).getTime() == chain.today().getTime() ? &quot;silver&quot; : &quot;&quot;
+        }
+    };
+};
+
+chain.indexAt = function(x, y) {
+    return y * 7 + x;
+}
+
+//render it
+m.module(document.body, chain);
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>From here, you can start adding polish to the app: <a href="http://stackoverflow.com/questions/8195741/how-do-they-do-this-mobile-site-added-to-homescreen-appears-as-standalone-app">making it &quot;Add to Home Screen&quot; friendly</a>, maybe <a href="http://webdesign.tutsplus.com/tutorials/quick-tip-easy-css3-checkboxes-and-radio-buttons--webdesign-8953">styling the checkboxes</a>, or just using a CSS framework like <a href="http://getbootstrap.com/">Bootstrap</a> for a quick improvement in look and feel, etc.</p>
+<hr>
+<h3 id="homework">Homework</h3>
+<p>You probably noticed that this app doesn&#39;t let you write down what is the actual activity that you are tracking. Adding a text input that lets you do so and saves this text to <code>localStorage</code> is a good homework assignment to solidify all the important concepts we covered in the article.</p>
+<p>Another feature that you should try to add is a button to reset the app (after all, an app that becomes useless after 49 days is no fun.)</p>
+<p>If you want to build more experience with real life coding, another thing you can do is take this app and improve it so that you can track more than one activity. This is a great exercise for reading existing code and refactoring, as well as learning more about useful <a href="http://lhorie.github.io/mithril">Mithril</a> features.</p>
+<p>Remember that if you need help or have questions, you are always welcome to post in the <a href="https://groups.google.com/forum/#!forum/mithriljs">mailing list</a> or send me an <a href="https://github.com/lhorie/">email</a>.</p>
+
 			]]></description>
 		</item>
 		<item>
