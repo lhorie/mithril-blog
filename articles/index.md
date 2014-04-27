@@ -1,5 +1,6 @@
 ## Articles
 
+- [Curry flavored promises](curry-flavored-promises.html) - April 27, 2014
 - [Better templates with FP](better-templates-with-fp.html) - April 20, 2014
 - [Building a "Seinfeld" app](building-a-seinfeld-app.html) - April 13, 2014
 - [Giving Mithril a voice](giving-mithril-a-voice.html) - April 11, 2014

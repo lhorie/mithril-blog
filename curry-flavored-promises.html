@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic" rel="stylesheet" />
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="curry-flavored-promises">Curry flavored promises</h2>
+<p><em>April 27, 2014</em></p>
+<p>One aspect of <a href="http://lhorie.github.io/mithril">Mithril</a> that is pretty nice is that it allows us to use <a href="http://lhorie.github.io/mithril/mithril.deferred.html">promises</a>.</p>
+<p>Promises are basically a mechanism that lets you chain a bunch of functions, which then get called asynchronously later when, say, an AJAX request completes:</p>
+<pre><code class="lang-javascript">//a little helper function
+var now = Date.now()
+var pastItems = function(items) {
+    return items.filter(function(item) {
+        return item.date &lt; now
+    });
+};
+
+//here&#39;s an AJAX request and a chain of promises
+m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(console.log) // log all projects
+    .then(pastItems) // filter past projects
+    .then(console.log) // log past projects only
+</code></pre>
+<p>Notice we&#39;re not calling <code>console.log()</code> nor <code>pastItems()</code>, but instead we&#39;re passing them to the promise&#39;s <code>.then()</code> method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to <code>.then</code> methods are only called at a later time, when the request completes.</p>
+<p>Organizing our code as shown above is useful because it makes it easier for us to reuse code:</p>
+<pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/vacations&quot;})
+    .then(pastItems) // filter past vacations
+    .then(console.log) // log past vacations
+</code></pre>
+<p>We can use the <code>pastItems</code> function to filter the result of a <code>vacations</code> web service (or any other web services) in addition to the projects one. Of course, we can also call the function directly if we have a list laying around that we want to filter.</p>
+<p>We can mix and match code too:</p>
+<pre><code class="lang-javascript">//another helper function
+var createdByJohnDoe = function(items) {
+    return items.filter(function(item) {
+        return item.createdBy == &quot;John Doe&quot;
+    });
+};
+
+m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(pastItems) // filter past projects
+    .then(createdByJohnDoe) // filter projects created by john doe
+    .then(console.log) // log past projects created by john doe
+</code></pre>
+<p>A clever reader will probably notice that even though the code above is terse and modular, there is some room for improvement: The <code>createdByJohnDoe</code> function is not very reusable - we want to be able to filter by an arbitrary user, not just John Doe.</p>
+<p>Fortunately, refactoring is easy. We can simply refactor our function to accept a <code>user</code> argument:</p>
+<pre><code class="lang-javascript">var createdBy = function(user, items) {
+    return items.filter(function(item) {
+        return item.createdBy == user
+    });
+};
+</code></pre>
+<p>And then, we can <strong>curry</strong> this generic <code>createdBy</code> function to get the equivalent of <code>createdByJohnDoe</code> again:</p>
+<pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(pastItems) // filter past projects
+    .then(createdBy.bind(this, &quot;John Doe&quot;)) // filter projects created by john doe
+    .then(console.log) // log past projects created by john doe
+</code></pre>
+<p>And voila! Curry flavored promises.</p>
+<hr>
+<h3 id="what-voodoo-magic-is-this-">What voodoo magic is this?</h3>
+<p>Let&#39;s slow down a bit.</p>
+<p>As we saw from the function definition earlier, <code>createdBy</code> can be called like this:</p>
+<pre><code class="lang-javascript">var things = [
+    {name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;},
+    {name: &quot;bar&quot;, createdBy: &quot;Jane Doe&quot;},
+    {name: &quot;baz&quot;, createdBy: &quot;Mary Doe&quot;},
+];
+var byJohn = createdBy(&quot;John Doe&quot;, things); // [{name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;}]
+</code></pre>
+<p>Currying is a functional programming technique that lets us pre-define arguments in a function. So <code>createdBy.bind(this, &quot;John Doe&quot;)</code> returns a function whose <code>user</code> argument is already set to &quot;John Doe&quot;. The <code>this</code> argument is, as you might have guessed, what the <code>this</code> should point to inside of the curried function. Since we don&#39;t actually use <code>this</code> in <code>createdBy</code>, this value doesn&#39;t actually matter for our purposes.</p>
+<p>One subtle thing to notice is that the curried function can still take more arguments, which will be mapped to whatever is the first argument that is not yet bound via the curry. Therefore, the curried function can be called like this:</p>
+<pre><code class="lang-javascript">var createdByJohnDoe = createdBy.bind(this, &quot;John Doe&quot;);
+
+var byJohn = createdByJohnDoe(things); //[{name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;}]
+</code></pre>
+<p>Whereas the signature of <code>createdBy</code> is <code>function(user, items)</code>, in the curried <code>createdByJohnDoe</code> function, the signature is simply <code>function(items)</code> because <code>user</code> is already present via an internal closure. Since <code>items</code> is the first argument of <code>createdByJohnDoe</code>, we can then pass this function to the promise&#39;s <code>.then()</code> method, which takes a function with signature <code>function(value)</code>, whose argument <code>value</code> is bound to the value being piped through the promise chain.</p>
+<p>So in the same way that calling <code>.then(console.log)</code> is equivalent to the code below:</p>
+<pre><code>.then(function(value) {
+    console.log(value)
+})
+</code></pre><p>the same is true about the curried <code>createdByJohnDoe</code>. We can simply use the one-liner <code>.then()</code> calls as shown earlier, without the need to create the anonymous function.</p>
+<p>Currying is a powerful technique that allows us to generalize and modularize our code, and then bring the pieces back together in a modular way.</p>
+<p>It is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.</p>
+<hr>
+<h3 id="parting-thoughts">Parting thoughts</h3>
+<p>I&#39;ll end this post with one last nugget: did you wonder why we are filtering projects on the client side? Usually it would make more sense to do so in the server (and more accurately, in the database server), but this is not always necessarily the case. Let&#39;s say that you do happen to have a full list of projects somewhere else in your app because it&#39;s something that the app deals with a lot. It&#39;s perfectly reasonable that your client-side model layer could cache that list, and that instead of re-fetching the data from the server, you could just tap into the client-side cache.</p>
+<p>Since we are building an extensive arsenal of modular filter functions, we can just fetch the list once (maybe even put it in localStorage), and then slice and dice the cached list in a variety of ways without the need for a bunch of similar but just slightly different web service requests, and without the need to write a single extra line of SQL to support those slightly different requests.</p>
+<p>So, you see, instead of spending all our time writing old style callback-driven code with lots of anonymous functions and a ton of custom SQL and other boilerplate code to support it, we can actually start spending time thinking of more efficient ways to deal with the data in our app in a much more comprehensive way. We can even start dreaming about things like offline apps.</p>
+<p>Food for thought? Bon appetit!</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="curry-flavored-promises.html">Curry flavored promises</a></li>
+								<li><a href="better-templates-with-fp.html">Better templates with FP</a></li>
+								<li><a href="building-a-seinfeld-app.html">Building a "Seinfeld" app</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://lhorie.github.io/mithril" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>
