@@ -97,7 +97,7 @@ var byJohn = createdByJohnDoe(things); //[{name: &quot;foo&quot;, createdBy: &qu
 })
 </code></pre><p>the same is true about the curried <code>createdByJohnDoe</code>. We can simply use the one-liner <code>.then()</code> calls as shown earlier, without the need to create the anonymous function.</p>
 <p>Currying is a powerful technique that allows us to generalize and modularize our code, and then bring the pieces back together in a modular way.</p>
-<p>It is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.</p>
+<p>This is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.</p>
 <hr>
 <h3 id="parting-thoughts">Parting thoughts</h3>
 <p>I&#39;ll end this post with one last nugget: did you wonder why we are filtering projects on the client side? Usually it would make more sense to do so in the server (and more accurately, in the database server), but this is not always necessarily the case. Let&#39;s say that you do happen to have a full list of projects somewhere else in your app because it&#39;s something that the app deals with a lot. It&#39;s perfectly reasonable that your client-side model layer could cache that list, and that instead of re-fetching the data from the server, you could just tap into the client-side cache.</p>

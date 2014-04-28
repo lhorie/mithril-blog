@@ -114,7 +114,7 @@ the same is true about the curried `createdByJohnDoe`. We can simply use the one
 
 Currying is a powerful technique that allows us to generalize and modularize our code, and then bring the pieces back together in a modular way.
 
-It is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.
+This is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.
 
 ---
 
