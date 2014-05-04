@@ -1,5 +1,6 @@
 ## Articles
 
+- [Lessons learned from Angular](lessons-learned-from-angular.html) - May 4, 2014
 - [Curry flavored promises](curry-flavored-promises.html) - April 27, 2014
 - [Better templates with FP](better-templates-with-fp.html) - April 20, 2014
 - [Building a "Seinfeld" app](building-a-seinfeld-app.html) - April 13, 2014
