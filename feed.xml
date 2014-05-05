@@ -8,112 +8,119 @@
 			<title>Lessons learned from Angular</title>
 			<link>http://lhorie.github.io/mithril-blog/lessons-learned-from-angular.html</link>
 			<description><![CDATA[
-<h2 id="better-templates-w-fp">Better Templates w/ FP</h2>
-<p><em>April 20, 2014</em></p>
-<p>Every once in a while, when I start writing a new application, I create a page layout with a header and some navigation, and then some time later I need to have more than one page. Then I realize that the layout is hard coded and parts of it needs to be refactored out of my original page in order to avoid the need to copy and paste the global elements in every page. Sounds familiar?</p>
-<p><a href="http://lhorie.github.io/mithril">Mithril</a> lets us take advantage of functional programming to create decoupled, composable templates - in other words, templates that you can mix and match.</p>
-<p>For example, let&#39;s suppose we are building a site that has a menu and a body area:</p>
-<pre><code class="lang-javascript">var layout = function() {
-    return m(&quot;.layout&quot;, [
-        m(&quot;header&quot;, [
-            &quot;nav here&quot;
-        ]),
-        m(&quot;main&quot;, [
-            &quot;body here&quot;
-        ])
-    ]);
-};
-
-m.module(document, {controller: function() {}, view: layout});
+<h2 id="lessons-learned-from-angularjs">Lessons learned from AngularJS</h2>
+<p><em>May 4, 2014</em></p>
+<p>Some people have asked me what are the differences between <a href="http://lhorie.github.io/mithril">Mithril</a> and <a href="http://angularjs.org">Angular</a></p>
+<p>I actually <a href="http://lhorie.github.io/mithril/comparison.html">wrote about some of the high-level differences here</a>.</p>
+<p>You might notice that on the Angular section, I go quite a bit more in depth than some other frameworks&#39; comparisons.</p>
+<p>As it turns out, I work with Angular a lot, so a lot of design decisions in Mithril come directly from my experience with it. In this article, I&#39;ll talk about some of the rationales behind Mithril&#39;s template design.</p>
+<p>Angular uses what it calls <em>directives</em> to enrich HTML with functionality. Directives are essentially a mechanism that attaches functionality to DOM elements in an unobtrusive manner. Directives can be bound to elements, attributes or class names and provide a &quot;free out-of-jail card&quot; of sorts that allows developers to break out of Angular&#39;s environment and access the DOM directly. There are <a href="http://docs.angularjs.org/api/ng/directive">dozens of directives</a> that come out of the box, and it&#39;s possible to create custom ones as well.</p>
+<p>Well written directives really shine as consumable APIs: they allow developers to declaratively add rich functionality to a static HTML page: you can whip up a code editor just as easily as a native HTML textarea.</p>
+<p>The main problem with directives is their sheer complexity: when writing a directive, you quick stumble across things like scope isolation and <code>$scope.$apply</code>, and the complexity only goes up when you start to look into more advanced concepts like transclusions, <code>$compile</code>, the <code>ngModelController</code>, etc. And complexity goes higher still when you need to debug &quot;$digest already in progress&quot; errors, or worse, the dependency graph of your app&#39;s watcher chain. Having written my share of non-trivial directives, I can attest to the difficulty of using the directive system for extending core Angular.</p>
+<p>Another problem is that the readability and maintainability of some directives tend to fall apart because they try to map procedural Javascript onto declarative HTML. This problem manifests itself in many ways: </p>
+<ul>
+<li><p><strong>awkward creep of Javascript logic into templates</strong></p>
+<p>It&#39;s pretty common to run into scenarios like these:</p>
+<pre><code class="lang-javascript">&lt;div ng-class=&quot;{&#39;text-success&#39;: item.value &gt; 50, &#39;text-danger&#39;: item.value &lt;= 50}&quot;&gt;&lt;/div&gt;
 </code></pre>
-<p>In case that code is not clear enough, here&#39;s what the output HTML looks like:</p>
-<pre><code class="lang-markup">&lt;div class=&quot;layout&quot;&gt;
-    &lt;header&gt;
-        nav here
-    &lt;/header&gt;
-    &lt;main&gt;
-        body here
-    &lt;/main&gt;
+<p>Some stuff is just downright <a href="https://groups.google.com/d/msg/angular/7WY_BmFzd3U/Zd_jHnMu58YJ">clunky</a>:</p>
+<pre><code class="lang-markup">&lt;input ng-model=&quot;search&quot; /&gt;
+&lt;table&gt;
+   &lt;tr ng-repeat-start=&quot;item in (filtered = items | filter: search)&quot;&gt;
+       &lt;td colspan=&quot;2&quot;&gt;...&lt;/td&gt;
+       &lt;td&gt;...&lt;/td&gt;
+   &lt;/tr&gt;
+   &lt;tr ng-repeat-end&gt;
+       &lt;td&gt;...&lt;/td&gt;
+   &lt;/tr&gt;
+&lt;/table&gt;
+&lt;p&gt;Showing {{filtered.length}} results&lt;/p&gt;
+</code></pre>
+<p>I&#39;ll leave it as an exercise to the reader to look up how to do recursive templates in Angular (e.g. for tree views) for another example.</p>
+</li>
+<li><p><strong>lack of proper error reporting</strong></p>
+<p>Angular can do a pretty decent job with expression syntax errors, but because expressions are embedded in HTML, we don&#39;t get line numbers.</p>
+<p>A perhaps more serious problem is the dubious feature that makes view expressions <a href="http://jsfiddle.net/pusf3/">swallow errors altogether</a>. Angular allows this because of its aggressive rendering profile:</p>
+<pre><code class="lang-javascript">function SomeCtrl($scope, someAsyncService) {
+   //Angular renders once here
+   $scope.greeting = &quot;Hello&quot;
+
+   someAsyncService(function(data) {
+       //and another time here
+       $scope.data = data
+   })
+}
+</code></pre>
+<pre><code class="lang-markup">&lt;div&gt;{{greeting}}&lt;/div&gt;
+
+&lt;!--the null reference exception is swallowed here so the first render doesn&#39;t break--&gt;
+&lt;div&gt;There are {{data.length}} things&lt;/div&gt;
+</code></pre>
+<p>Another semi-related problem: this is a common debugging technique in Angular:</p>
+<pre><code class="lang-markup">&lt;div ng-repeat=&quot;item in items&quot;&gt;
+   ...
+&lt;/div&gt;
+
+&lt;!--let&#39;s debug the `items` variable - this prints the JSON representation of the data--&gt;
+{{items}}
+</code></pre>
+<p>It&#39;s surprisingly common to forget to remove a debug statement and the result can be far more embarrassing than it should be.</p>
+</li>
+<li><p><strong>leaky abstractions</strong></p>
+<p>Consider this snippet:</p>
+<pre><code class="lang-markup">&lt;div&gt;{{item}}&lt;/div&gt;
+...
+&lt;ul ng-repeat=&quot;item in items&quot;&gt;
+   &lt;li&gt;{{item}}&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>The variable <code>item</code> can mean different things in different places because of a programming language feature called <a href="http://en.wikipedia.org/wiki/Variable_shadowing">variable shadowing</a>.</p>
+<p>But instead of using Javascript&#39;s built-in system, Angular builds its own implementation, with some weird results:</p>
+<pre><code class="lang-markup">&lt;a href=&quot;&quot; ng-click=&quot;flag = true&quot;&gt;open&lt;/a&gt;
+
+&lt;div ng-show=&quot;flag&quot;&gt;
+   &lt;a href=&quot;&quot; ng-click=&quot;flag = false&quot;&gt;close&lt;/a&gt;
 &lt;/div&gt;
 </code></pre>
-<p>What we want to do is be able to dynamically define what <code>nav here</code> and <code>body here</code> are. In other words, we want a layout that looks like this:</p>
-<pre><code class="lang-javascript">var layout = function(nav, body) {
-    return m(&quot;.layout&quot;, [
-        m(&quot;header&quot;, nav),
-        m(&quot;main&quot;, body)
-    ]);
+<p>Click on the <code>open</code> link, the <code>div</code> shows up. Click on <code>close</code>, it hides. Now let&#39;s say you want to use <code>ng-if</code> instead, maybe because you&#39;re finding yourself needing to use CSS nth-child selectors or as a performance optimization or whatever.</p>
+<pre><code class="lang-markup">&lt;a href=&quot;&quot; ng-click=&quot;flag = true&quot;&gt;open&lt;/a&gt;
+
+&lt;div ng-if=&quot;flag&quot;&gt;
+   &lt;a href=&quot;&quot; ng-click=&quot;flag = false&quot;&gt;close&lt;/a&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Now this <a href="http://jsfiddle.net/54RXG/">doesn&#39;t work</a> as before. Considering that it is common to use the <code>ng-show</code>/<code>ng-if</code> feature when implementing lists or tables of big things with a fallback case for zero items, it&#39;s relatively easy to break completely unrelated parts of an app with a seemingly innocuous change.</p>
+</li>
+<li><p><strong>Performance</strong></p>
+<p>Another problem related to Angular&#39;s re-implementation of scope (among other things) is the steep performance degradation when things like grids grow past a modest size. Often things look ok w/ test data, but with production-level data volume, you are sudddenly forced to discover about Angular internal concepts like watchers, dirty checking, apply cycles, etc, or you need to do massively time consuming audits of the codebase in order to figure out the feasibility of adding the ng-bindOnce plugin, or maybe you need to completely rewrite a top-level ng-repeat to use the ng-grid plugin instead.</p>
+<p>It&#39;s extremely difficult to reason about Angular performance, and standard tools don&#39;t help very much.</p>
+</li>
+</ul>
+<p>Mithril takes lessons from my Angular experience and it takes a completely different approach: <em>it maps HTML onto Javascript</em>. This means that instead of having to retrofit control flow into a declarative syntax that was never meant to support it, we simply take advantage of the standard DOM API that ships with all browsers to create and update the HTML from Javascript instead, and let Javascript do the job of the control flow, variable shadowing, recursiveness, etc. Use the right tool for the right job, etc.</p>
+<p>In addition to resulting in a <em>really</em> small code footprint (~3kb gzipped), this approach allows a much higher level of expressiveness much more easily. In a <a href="http://lhorie.github.io/mithril-blog/building-a-seinfeld-app.html">previous post</a>, for instance, I showed a few examples of how simple it is to add application-focused expressiveness to a Mithril template.</p>
+<pre><code class="lang-javascript">//a 7x7 grid of checkboxes where the cell for the current day is highlighted
+var view = function(ctrl) {
+    return m(&quot;table&quot;, seven(function(y) {
+        return m(&quot;tr&quot;, seven(function(x) {
+            var index = indexAt(x, y)
+            return m(&quot;td&quot;, highlights(index), [
+                m(&quot;input[type=checkbox]&quot;, checks(ctrl, index))
+            ]);
+        }));
+    }));
 };
 </code></pre>
-<p>And sub-templates that look like this:</p>
-<pre><code class="lang-javascript">var nav = function() {
-    return [
-        &quot;nav here&quot;
-    ];
-};
-var body = function() {
-    return [
-        &quot;body here&quot;
-    ];
-};
-</code></pre>
-<p>By organizing our code like this, the sub-templates don&#39;t need to be cluttered with explicit layout references, and the layout can flexibly render different navs and bodies as our app grows in complexity. In other words, organizing our code this way gives us nice and modular templates.</p>
-<p>So all we need now is a glue to put together these nice modular pieces of code together.</p>
-<p>Since functions are first class citizens in Javascript, we can create a <strong>higher order function</strong> - a function that works with functions - to do that for us:</p>
-<pre><code class="lang-javascript">var mixinLayout = function(layout, nav, body) {
-    return function() {
-        return layout(nav(), body());
-    };
-};
-</code></pre>
-<p>All this function does is take templates as arguments (remember, Mithril templates are just functions), and then return a function that calls them (side note: the returned function is also a template).</p>
-<p>And that&#39;s it! Now we can create as many layouts, navs and bodies as we want and we can put them together however we want to create our views:</p>
-<pre><code class="lang-javascript">//here&#39;s a module
-var myModule = {};
-myModule.controller = function() { /*...*/ };
-myModule.view = mixinLayout(layout, nav, body);
-
-//here&#39;s another module
-var anotherModule = {};
-anotherModule.controller = function() { /*...*/ };
-anotherModule.view = mixinLayout(layout, anotherNav, anotherBody);
-
-//hook up our modules to routes
-m.route(document, &quot;/foo&quot;, {
-    &quot;/foo&quot;: myModule,
-    &quot;/bar&quot;: anotherModule
-});
-</code></pre>
-<hr>
-<h3 id="advanced-usage">Advanced usage</h3>
-<p>This technique becomes very powerful when using <a href="http://lhorie.github.io/mithril/components.html">components</a> to organize code. For example, you might have a widget that lives in its own page (e.g. a login widget), but this widget may also appear in a modal dialog somewhere else in the site.</p>
-<p>By writing the login widget&#39;s template as a self-contained function as we saw above, we can attach a layout for the standalone login page, and we can just include the naked template as a component in our modal dialog. No copy-pasta required.</p>
-<pre><code class="lang-javascript">//the widget template
-var loginWidget = function() {
-    return [
-        m(&quot;input[placeholder=&#39;Username&#39;]&quot;),
-        m(&quot;input[placeholder=&#39;Password&#39;][type=&#39;password&#39;]&quot;),
-        m(&quot;button&quot;)
-    ]
-}
-
-//standalone page
-var loginPage = {}
-loginPage.controller = function() { /*...*/ }
-loginWidget.view = mixinLayout(layout, nav, loginWidget)
-
-//as a component in another part of the app
-var anotherPlace = {}
-anotherPlace.controller = function() { /*...*/ }
-anotherPlace.view = function() {
-    return [
-        &quot;stuff before&quot;,
-        loginWidget(),
-        &quot;stuff after&quot;
-    ]
-}
-</code></pre>
-<p>It&#39;s worth noting that even though I call this an example of &quot;advanced usage&quot; and throw around fancy words like &quot;components&quot;, the code itself is actually surprisingly straightforward.</p>
-<p>Hopefully this article sheds some light into ways to keep templates DRY, and how Mithril&#39;s simplicity can help achieve that goal.</p>
+<p>The sample above illustrates that instead of having to use <code>repeat</code> and <code>model</code> directives and naked color hex values to make the computer do what we want, we can explicitly express that there are <code>seven</code> children in an element, that a cell <code>highlights</code> and that a checkbox <code>checks</code> - and we can implement these terms just as easily - they&#39;re just straightforward, transparent functions.</p>
+<p>Because Mithril acknowledges that dynamic data binding in large systems is more procedural than declarative, we can leverage the full power of Javascript without getting tripped by <a href="http://en.wikipedia.org/wiki/Greenspun&#39;s_tenth_rule">Greenspun&#39;s tenth rule</a>, and without the need to learn framework-specific templating syntax that we&#39;ll probably not be using in 10 years.</p>
+<p>But even though Mithril templates are ultimately plain Javascript, we don&#39;t necessarily need to sacrifice the familiar syntax of HTML in order to get the flexibility of Javascript: there&#39;s a nifty React-based transformer by Jonathan Buchanan <a href="https://groups.google.com/d/msg/mithriljs/lGiNpog2mbc/ThZSdgw_nucJ">that allows us to write templates with plain HTML syntax</a>.</p>
+<p>We could also use Coffeescript instead, if that&#39;s your cup of, er, coffee.</p>
+<p>The point is that in addition to having the refactoring power of a programming language available at no extra cost, we also get access to a wide array of tools: templates can be profiled granularly, minified, linted, unit tested <em>without the slowness of loading up PhantomJS</em>, etc. The &quot;Mithril ecosystem&quot; might still be in its infancy, but the Javascript ecosystem is huge and Mithril is ready to take advantage of it in ways that many frameworks can&#39;t even begin dreaming of.</p>
+<p>Here&#39;s a cool example: we can use <a href="http://lhorie.github.io/mithril/compiling-templates.html">Sweet.js macros</a> to make existing code faster for free, or even <a href="https://github.com/mozilla/sweet.js/wiki/Example-macros">create new extensions to the language</a>, if we&#39;re bold enough. The elusive power of Lisp macros is now all of a sudden something that can actually be used in our frontend day-to-day work - without the need to <a href="http://artyom.me/learning-racket-1">learn a whole new language</a> or <a href="http://jlongster.com/Stop-Writing-JavaScript-Compilers--Make-Macros-Instead">learn about compilers</a>.</p>
+<p>There are many other aspects of Mithril that are also worth mentioning. The rendering engine waits until controllers are fully done before redrawing instead of flickering incorrect states at every AJAX response. The routing system actually works with things like anchors (e.g. &quot;back to top&quot; links) and browser history lists (e.g. <code>Ctrl+H</code> in Chrome), instead of being, well, broken. The high performance is a result of a very aggressive take on the do-less-to-be-fast and the don&#39;t-reinvent-the-wheel mantras. The composability of the component system is rooted on the field of functional programming (rather than being an ad-hoc half-implementation) and thus it&#39;s mathematically sound.</p>
+<p>All of these features have one thing in common: they originate from pain points from my experience with actually building non-trivial apps. Apps with fuzzy scope, top-down directed changes, ambiguous requirements, tight budgets and deadlines - you know, <em>real world</em> apps. At the end of the day, it&#39;s important for a framework to keep in mind that it doesn&#39;t exist for its own sake: rather than assuming an utopia where the developer has the luxury of deciding every aspect of an application&#39;s feature set, design and implementation, and where not-so-easy-to-implement things can be waved away with soft skills so that the developer can stay within the comfort zone of the framework, a framework must be prepared to take on the ugly reality of less than ideal workflows. </p>
+<p>It&#39;s not supposed to be up to a framework to limit what I <a href="http://stackoverflow.com/questions/9682092/databinding-in-angularjs">can and cannot do</a>, and it&#39;s not supposed to be <a href="https://github.com/angular/angular.js/blob/master/CHANGELOG.md">breaking</a> high impact aspects of application space every other release.</p>
+<p>These are things that you only really &quot;get&quot; if you&#39;re burned by them, and burned by them I have been. These lessons were part of every design decision and every line of code in Mithril, and are always part of the ongoing progress of the project: stability before new features, research before code (even for small-looking changes), regression tests, &quot;it-is-not-done-until-it-is-documented&quot; (and yes, things <em>do</em> get done), etc.</p>
+<p>Anyways, I was only planning on talking about templating engines, but I guess things dragged on a bit. The point though is that Mithril scratches <em>a lot</em> of itches, not just in terms of just templating, or even just code: it does so for frontend application development as a whole.</p>
 
 			]]></description>
 		</item>
@@ -121,112 +128,90 @@ anotherPlace.view = function() {
 			<title>Curry flavored promises</title>
 			<link>http://lhorie.github.io/mithril-blog/curry-flavored-promises.html</link>
 			<description><![CDATA[
-<h2 id="better-templates-w-fp">Better Templates w/ FP</h2>
-<p><em>April 20, 2014</em></p>
-<p>Every once in a while, when I start writing a new application, I create a page layout with a header and some navigation, and then some time later I need to have more than one page. Then I realize that the layout is hard coded and parts of it needs to be refactored out of my original page in order to avoid the need to copy and paste the global elements in every page. Sounds familiar?</p>
-<p><a href="http://lhorie.github.io/mithril">Mithril</a> lets us take advantage of functional programming to create decoupled, composable templates - in other words, templates that you can mix and match.</p>
-<p>For example, let&#39;s suppose we are building a site that has a menu and a body area:</p>
-<pre><code class="lang-javascript">var layout = function() {
-    return m(&quot;.layout&quot;, [
-        m(&quot;header&quot;, [
-            &quot;nav here&quot;
-        ]),
-        m(&quot;main&quot;, [
-            &quot;body here&quot;
-        ])
-    ]);
+<h2 id="curry-flavored-promises">Curry flavored promises</h2>
+<p><em>April 27, 2014</em></p>
+<p>One aspect of <a href="http://lhorie.github.io/mithril">Mithril</a> that is pretty nice is that it allows us to use <a href="http://lhorie.github.io/mithril/mithril.deferred.html">promises</a>.</p>
+<p>Promises are basically a mechanism that lets you chain a bunch of functions, which then get called asynchronously later when, say, an AJAX request completes:</p>
+<pre><code class="lang-javascript">//a little helper function
+var now = Date.now()
+var pastItems = function(items) {
+    return items.filter(function(item) {
+        return item.date &lt; now
+    });
 };
 
-m.module(document, {controller: function() {}, view: layout});
+//here&#39;s an AJAX request and a chain of promises
+m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(console.log) // log all projects
+    .then(pastItems) // filter past projects
+    .then(console.log) // log past projects only
 </code></pre>
-<p>In case that code is not clear enough, here&#39;s what the output HTML looks like:</p>
-<pre><code class="lang-markup">&lt;div class=&quot;layout&quot;&gt;
-    &lt;header&gt;
-        nav here
-    &lt;/header&gt;
-    &lt;main&gt;
-        body here
-    &lt;/main&gt;
-&lt;/div&gt;
+<p>Notice we&#39;re not calling <code>console.log()</code> nor <code>pastItems()</code>, but instead we&#39;re passing them to the promise&#39;s <code>.then()</code> method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to <code>.then</code> methods are only called at a later time, when the request completes.</p>
+<p>Organizing our code as shown above is useful because it makes it easier for us to reuse code:</p>
+<pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/vacations&quot;})
+    .then(pastItems) // filter past vacations
+    .then(console.log) // log past vacations
 </code></pre>
-<p>What we want to do is be able to dynamically define what <code>nav here</code> and <code>body here</code> are. In other words, we want a layout that looks like this:</p>
-<pre><code class="lang-javascript">var layout = function(nav, body) {
-    return m(&quot;.layout&quot;, [
-        m(&quot;header&quot;, nav),
-        m(&quot;main&quot;, body)
-    ]);
+<p>We can use the <code>pastItems</code> function to filter the result of a <code>vacations</code> web service (or any other web services) in addition to the projects one. Of course, we can also call the function directly if we have a list laying around that we want to filter.</p>
+<p>We can mix and match code too:</p>
+<pre><code class="lang-javascript">//another helper function
+var createdByJohnDoe = function(items) {
+    return items.filter(function(item) {
+        return item.createdBy == &quot;John Doe&quot;
+    });
 };
-</code></pre>
-<p>And sub-templates that look like this:</p>
-<pre><code class="lang-javascript">var nav = function() {
-    return [
-        &quot;nav here&quot;
-    ];
-};
-var body = function() {
-    return [
-        &quot;body here&quot;
-    ];
-};
-</code></pre>
-<p>By organizing our code like this, the sub-templates don&#39;t need to be cluttered with explicit layout references, and the layout can flexibly render different navs and bodies as our app grows in complexity. In other words, organizing our code this way gives us nice and modular templates.</p>
-<p>So all we need now is a glue to put together these nice modular pieces of code together.</p>
-<p>Since functions are first class citizens in Javascript, we can create a <strong>higher order function</strong> - a function that works with functions - to do that for us:</p>
-<pre><code class="lang-javascript">var mixinLayout = function(layout, nav, body) {
-    return function() {
-        return layout(nav(), body());
-    };
-};
-</code></pre>
-<p>All this function does is take templates as arguments (remember, Mithril templates are just functions), and then return a function that calls them (side note: the returned function is also a template).</p>
-<p>And that&#39;s it! Now we can create as many layouts, navs and bodies as we want and we can put them together however we want to create our views:</p>
-<pre><code class="lang-javascript">//here&#39;s a module
-var myModule = {};
-myModule.controller = function() { /*...*/ };
-myModule.view = mixinLayout(layout, nav, body);
 
-//here&#39;s another module
-var anotherModule = {};
-anotherModule.controller = function() { /*...*/ };
-anotherModule.view = mixinLayout(layout, anotherNav, anotherBody);
-
-//hook up our modules to routes
-m.route(document, &quot;/foo&quot;, {
-    &quot;/foo&quot;: myModule,
-    &quot;/bar&quot;: anotherModule
-});
+m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(pastItems) // filter past projects
+    .then(createdByJohnDoe) // filter projects created by john doe
+    .then(console.log) // log past projects created by john doe
 </code></pre>
+<p>A clever reader will probably notice that even though the code above is terse and modular, there is some room for improvement: The <code>createdByJohnDoe</code> function is not very reusable - we want to be able to filter by an arbitrary user, not just John Doe.</p>
+<p>Fortunately, refactoring is easy. We can simply refactor our function to accept a <code>user</code> argument:</p>
+<pre><code class="lang-javascript">var createdBy = function(user, items) {
+    return items.filter(function(item) {
+        return item.createdBy == user
+    });
+};
+</code></pre>
+<p>And then, we can <strong>curry</strong> this generic <code>createdBy</code> function to get the equivalent of <code>createdByJohnDoe</code> again:</p>
+<pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
+    .then(pastItems) // filter past projects
+    .then(createdBy.bind(this, &quot;John Doe&quot;)) // filter projects created by john doe
+    .then(console.log) // log past projects created by john doe
+</code></pre>
+<p>And voila! Curry flavored promises.</p>
 <hr>
-<h3 id="advanced-usage">Advanced usage</h3>
-<p>This technique becomes very powerful when using <a href="http://lhorie.github.io/mithril/components.html">components</a> to organize code. For example, you might have a widget that lives in its own page (e.g. a login widget), but this widget may also appear in a modal dialog somewhere else in the site.</p>
-<p>By writing the login widget&#39;s template as a self-contained function as we saw above, we can attach a layout for the standalone login page, and we can just include the naked template as a component in our modal dialog. No copy-pasta required.</p>
-<pre><code class="lang-javascript">//the widget template
-var loginWidget = function() {
-    return [
-        m(&quot;input[placeholder=&#39;Username&#39;]&quot;),
-        m(&quot;input[placeholder=&#39;Password&#39;][type=&#39;password&#39;]&quot;),
-        m(&quot;button&quot;)
-    ]
-}
-
-//standalone page
-var loginPage = {}
-loginPage.controller = function() { /*...*/ }
-loginWidget.view = mixinLayout(layout, nav, loginWidget)
-
-//as a component in another part of the app
-var anotherPlace = {}
-anotherPlace.controller = function() { /*...*/ }
-anotherPlace.view = function() {
-    return [
-        &quot;stuff before&quot;,
-        loginWidget(),
-        &quot;stuff after&quot;
-    ]
-}
+<h3 id="what-voodoo-magic-is-this-">What voodoo magic is this?</h3>
+<p>Let&#39;s slow down a bit.</p>
+<p>As we saw from the function definition earlier, <code>createdBy</code> can be called like this:</p>
+<pre><code class="lang-javascript">var things = [
+    {name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;},
+    {name: &quot;bar&quot;, createdBy: &quot;Jane Doe&quot;},
+    {name: &quot;baz&quot;, createdBy: &quot;Mary Doe&quot;},
+];
+var byJohn = createdBy(&quot;John Doe&quot;, things); // [{name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;}]
 </code></pre>
-<p>It&#39;s worth noting that even though I call this an example of &quot;advanced usage&quot; and throw around fancy words like &quot;components&quot;, the code itself is actually surprisingly straightforward.</p>
-<p>Hopefully this article sheds some light into ways to keep templates DRY, and how Mithril&#39;s simplicity can help achieve that goal.</p>
+<p>Currying is a functional programming technique that lets us pre-define arguments in a function. So <code>createdBy.bind(this, &quot;John Doe&quot;)</code> returns a function whose <code>user</code> argument is already set to &quot;John Doe&quot;. The <code>this</code> argument is, as you might have guessed, what the <code>this</code> should point to inside of the curried function. Since we don&#39;t actually use <code>this</code> in <code>createdBy</code>, this value doesn&#39;t actually matter for our purposes.</p>
+<p>One subtle thing to notice is that the curried function can still take more arguments, which will be mapped to whatever is the first argument that is not yet bound via the curry. Therefore, the curried function can be called like this:</p>
+<pre><code class="lang-javascript">var createdByJohnDoe = createdBy.bind(this, &quot;John Doe&quot;);
+
+var byJohn = createdByJohnDoe(things); //[{name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;}]
+</code></pre>
+<p>Whereas the signature of <code>createdBy</code> is <code>function(user, items)</code>, in the curried <code>createdByJohnDoe</code> function, the signature is simply <code>function(items)</code> because <code>user</code> is already present via an internal closure. Since <code>items</code> is the first argument of <code>createdByJohnDoe</code>, we can then pass this function to the promise&#39;s <code>.then()</code> method, which takes a function with signature <code>function(value)</code>, whose argument <code>value</code> is bound to the value being piped through the promise chain.</p>
+<p>So in the same way that calling <code>.then(console.log)</code> is equivalent to the code below:</p>
+<pre><code>.then(function(value) {
+    console.log(value)
+})
+</code></pre><p>the same is true about the curried <code>createdByJohnDoe</code>. We can simply use the one-liner <code>.then()</code> calls as shown earlier, without the need to create the anonymous function.</p>
+<p>Currying is a powerful technique that allows us to generalize and modularize our code, and then bring the pieces back together in a modular way.</p>
+<p>This is one of the ways to avoid callback hell (i.e. zig-zaggy-indentation code made up of deeply nested callbacks), while at the same time enumerating the types of operations present in your app in a way that is easy to find, read and organize.</p>
+<hr>
+<h3 id="parting-thoughts">Parting thoughts</h3>
+<p>I&#39;ll end this post with one last nugget: did you wonder why we are filtering projects on the client side? Usually it would make more sense to do so in the server (and more accurately, in the database server), but this is not always necessarily the case. Let&#39;s say that you do happen to have a full list of projects somewhere else in your app because it&#39;s something that the app deals with a lot. It&#39;s perfectly reasonable that your client-side model layer could cache that list, and that instead of re-fetching the data from the server, you could just tap into the client-side cache.</p>
+<p>Since we are building an extensive arsenal of modular filter functions, we can just fetch the list once (maybe even put it in localStorage), and then slice and dice the cached list in a variety of ways without the need for a bunch of similar but just slightly different web service requests, and without the need to write a single extra line of SQL to support those slightly different requests.</p>
+<p>So, you see, instead of spending all our time writing old style callback-driven code with lots of anonymous functions and a ton of custom SQL and other boilerplate code to support it, we can actually start spending time thinking of more efficient ways to deal with the data in our app in a much more comprehensive way. We can even start dreaming about things like offline apps.</p>
+<p>Food for thought? Bon appetit!</p>
 
 			]]></description>
 		</item>
