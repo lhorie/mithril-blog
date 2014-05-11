@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/better-templates-with-fp.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/getting-over-a-fear-of-turing-complete-templates.md"], dest: "feed.xml"}]
 			}
 		}
 	});

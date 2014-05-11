@@ -1,5 +1,6 @@
 ## Articles
 
+- [Getting over a fear of turing complete templates](getting-over-a-fear-of-turing-complete-templates.html) - May 11, 2014
 - [Lessons learned from Angular](lessons-learned-from-angular.html) - May 4, 2014
 - [Curry flavored promises](curry-flavored-promises.html) - April 27, 2014
 - [Better templates with FP](better-templates-with-fp.html) - April 20, 2014

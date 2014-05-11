@@ -5,6 +5,223 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Getting over a fear of turing complete templates</title>
+			<link>http://lhorie.github.io/mithril-blog/getting-over-a-fear-of-turing-complete-templates.html</link>
+			<description><![CDATA[
+<h2 id="getting-over-a-fear-of-turing-complete-templates">Getting over a fear of turing complete templates</h2>
+<p>One somewhat amusing criticism against turing complete templates like <a href="http://lhorie.github.io/mithril">Mithril</a>&#39;s is that the ability to write procedural code enables you to write crappy code. In this post we&#39;re going to ignore the fact that you can &quot;write COBOL in any language&quot;, and that things like code reviews exist precisely to prevent this kind of problems. Rather, we&#39;re going to use another feature of turing complete programming languages - the ability to refactor and abstract away noisy code - to make our template more declarative (like HTML), and at the same time, more expressive and modular. </p>
+<p>When we talk about templates, generally, people consider procedural code to be crappy, because, when we think of HTML, a template is supposed to be declarative. Here&#39;s an example of code using procedural constructs:</p>
+<pre><code class="lang-javascript">var app = {}
+
+app.view = function(ctrl) {
+    var currentTab;
+
+    switch (ctrl.tab) {
+        case &quot;tab1&quot;:
+            currentTab = m(&quot;.tab&quot;, &quot;tab 1 here...&quot;);
+            break;
+        case &quot;tab2&quot;:
+            currentTab = m(&quot;.tab&quot;, &quot;tab 2 here...&quot;);
+            break;
+        case &quot;tab3&quot;:
+            currentTab = m(&quot;.tab&quot;, &quot;tab 3 here...&quot;);
+            break;
+    }
+
+    return m(&quot;.container&quot;, [
+        m(&quot;ul&quot;, [
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
+        ]),
+        currentTab
+    ]);
+};
+</code></pre>
+<p>Let&#39;s be honest, having a <code>switch</code> statement to assign to a variable kinda sticks out like a sore thumb, doesn&#39;t it?</p>
+<p>One way we can improve the code is by using <a href="http://lhorie.github.io/mithril/components.html">components</a>. This might sound like it&#39;s gonna be a lot of refactoring and a lot of code, but it&#39;s actually pretty straightforward:</p>
+<p>All we need to do is pull out the subtemplates for each tab into separate functions:</p>
+<pre><code class="lang-javascript">//turn each tab into a separate module
+app.tab1.view = function(ctrl) {
+    return m(&quot;.tab&quot;, &quot;tab 1 here...&quot;)
+};
+
+app.tab2.view = function(ctrl) {
+    return m(&quot;.tab&quot;, &quot;tab 2 here...&quot;)
+};
+
+app.tab3.view = function(ctrl) {
+    return m(&quot;.tab&quot;, &quot;tab 3 here...&quot;)
+};
+</code></pre>
+<p>And then substitute them back into the main template:</p>
+<pre><code class="lang-javascript">app.view = function(ctrl) {
+    var currentTab;
+
+    switch (ctrl.tab) {
+        case &quot;tab1&quot;:
+            currentTab = app.tab1.view(ctrl);
+            break;
+        case &quot;tab2&quot;:
+            currentTab = app.tab2.view(ctrl);
+            break;
+        case &quot;tab3&quot;:
+            currentTab = app.tab3.view(ctrl);
+            break;
+    }
+
+    return m(&quot;.container&quot;, [
+        m(&quot;ul&quot;, [
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
+        ]),
+        currentTab
+    ]);
+};
+</code></pre>
+<p>While we&#39;re at it, it&#39;s also a good idea to split the logic from our initial module&#39;s controller into the respective tab controllers:</p>
+<pre><code class="lang-javascript">app.controller = function() {
+    //the initial tab
+    this.tab = &quot;tab1&quot;;
+
+    //instantiate controllers for tabs
+    //the logic for each tab should be in the respective controller
+    this.tab1 = new app.tab1.controller(this);
+    this.tab2 = new app.tab2.controller(this);
+    this.tab3 = new app.tab3.controller(this);
+};
+
+//...
+//notice we&#39;re passing the respective tab controllers here
+switch (ctrl.tab) {
+    case &quot;tab1&quot;:
+        currentTab = app.tab1.view(ctrl.tab1);
+        break;
+    case &quot;tab2&quot;:
+        currentTab = app.tab2.view(ctrl.tab2);
+        break;
+    case &quot;tab3&quot;:
+        currentTab = app.tab3.view(ctrl.tab2);
+        break;
+}
+//...
+</code></pre>
+<p>Doing this makes dependencies between the main module and each tab explicit. It also means we can then <a href="better-templates-with-fp.html">reuse the modules for the tabs elsewhere</a>. If, in your not-so-trivial app, you find that doing this exercise is a pain, then you just experienced the problem with what are known as &quot;god functions&quot;. God functions are hard to maintain because the lack of explicitness provided by closures makes it hard to reason about the impact of changes as they cascade down through various unrelated parts of the app. It&#39;s usually a good idea to refactor big functions early, before thing grow too big and changing things becomes too cost-prohibitive.</p>
+<p>As a side note, I omitted the definitions of each module earlier, but what they are supposed to look like should hopefully be obvious (or at least easy to figure out). As an example, here&#39;s the skeleton of the <code>app.tab1</code> module, of which <code>app.tab1.view</code> is a part of:</p>
+<pre><code class="lang-javascript">var app.tab1 = {}
+app.tab1.controller = function() { /*...*/ }
+app.tab1.view = function(ctrl) {
+    return m(&quot;.tab&quot;, &quot;tab 1 here...&quot;)
+}
+</code></pre>
+<hr>
+<p>We can now refactor away our switch statement. The problem with <code>switch</code> is that it&#39;s a statements, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a <code>switch</code>-like expression instead using a little trick from the world of Python: <strong>dictionary switches</strong></p>
+<pre><code class="lang-javascript">var subject = &quot;John&quot;;
+
+var choice = {
+    &quot;John&quot;: &quot;lemonade&quot;,
+    &quot;Bob&quot;: &quot;orange juice&quot;,
+    &quot;Mary&quot;: &quot;tea&quot;,
+}[subject];
+
+//choice is &quot;lemonade&quot;
+</code></pre>
+<p>This is just a regular Javascript object, with the twist that we immediately access one of its properties to get a value that corresponds to the key we accessed.</p>
+<p>We can use this technique to create a tiny helper function:</p>
+<pre><code class="lang-javascript">//helper function
+app.choose = function(key, options) {
+    var option = options[key];
+    return options[0](option[1]);
+};
+</code></pre>
+<p>And we can then use this helper function to replace the <code>switch</code> statement:</p>
+<pre><code class="lang-javascript">app.view = function(ctrl) {
+    var currentTab = app.choose(ctrl.tab, {
+        &quot;tab1&quot;: [app.tab1.view, ctrl.tab1],
+        &quot;tab2&quot;: [app.tab2.view, ctrl.tab2],
+        &quot;tab3&quot;: [app.tab3.view, ctrl.tab3]
+    })
+
+    return m(&quot;.container&quot;, [
+        m(&quot;ul&quot;, [
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
+        ]),
+        currentTab
+    ]);
+};
+</code></pre>
+<p>Or even better, we can drop the variable assignment altogether:</p>
+<pre><code class="lang-javascript">app.view = function(ctrl) {
+    return m(&quot;.container&quot;, [
+        m(&quot;ul&quot;, [
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
+            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
+        ]),
+        //here we use our helper
+        app.choose(ctrl.tab, {
+            &quot;tab1&quot;: [app.tab1.view, ctrl.tab1],
+            &quot;tab2&quot;: [app.tab2.view, ctrl.tab2],
+            &quot;tab3&quot;: [app.tab3.view, ctrl.tab3]
+        })
+    ]);
+};
+</code></pre>
+<p>Doesn&#39;t that look cleaner? Let&#39;s break things down a little bit.</p>
+<p><code>app.choose</code> accepts 2 parameters: a key and a dictionary. In the code above, the dictionary switch has three options, <code>tab1</code>, <code>tab2</code> and <code>tab3</code>. We pick one of those via the square bracket notation and <code>ctrl.tab</code> (which is <code>tab1</code> on initial load, if you recall the controller code ealier).</p>
+<p>The value that corresponds to <code>tab1</code> is <code>[app.tab1.view, ctrl.tab1]</code>. <code>app.choose</code> calls the first item in the array as a function and passes the second one as an argument. In other words, it calls <code>app.tab1.view(ctrl.tab1)</code>, thus rendering the <code>app.tab1</code> component.</p>
+<p>Phew!</p>
+<p>A neat thing to notice is that <code>app.choose</code> is <em>also</em> a reusable tool. We can use it to toggle other tab groups, or for that matter, page menus, accordions, or any switchable widget. Not bad for a 2-liner helper function, huh?</p>
+<hr>
+<h3 id="last-thoughts">Last thoughts</h3>
+<p>Before we wrap up, I just wanted to mention one last thing for those who might be having trouble keeping templates declarative. These are probably a little more well known tricks to savvier Javascript developers, but I&#39;ve had quite a few people use statement-based idioms when asking me questions, and I think it&#39;s worthwhile being thorough.</p>
+<p>We can get rid of other flow control statements from views, in a similar way to how we replaced <code>switch</code>:</p>
+<ul>
+<li><p><code>if</code> statements can be replaced with the ternary operator:</p>
+<pre><code class="lang-javascript">//instead of this
+var widget
+if (someCondition) {
+   widget = m(&quot;div&quot;, &quot;widget here&quot;)
+}
+
+m(&quot;div&quot;, [
+   widget
+])
+
+//we can use this
+m(&quot;div&quot;, [
+   someCondition ? m(&quot;div&quot;, &quot;widget here&quot;) : &quot;&quot;
+])
+</code></pre>
+</li>
+<li><p>loops can usually be replaced with <code>Array.prototype.map()</code></p>
+<pre><code class="lang-javascript">//instead of this
+var items = [];
+for (var i = 0; i &lt; someList.length; i++) {
+   var tpl = m(&quot;div&quot;, &quot;list item &quot; + i)
+   items.push(tpl);
+};
+
+m(&quot;div&quot;, items)
+
+//we can use this
+m(&quot;div&quot;, [
+   someList.map(function(item, i) {
+       return m(&quot;div&quot;, &quot;list item &quot; + i)
+   })
+])
+</code></pre>
+</li>
+</ul>
+<p>Remember we can also create other helper functions like <code>app.choose</code> above to express more intricate flow control, as we did w/ <a href="building-a-seinfeld-app.html"><code>seven</code> in the Seinfeld app</a> a few weeks ago. Don&#39;t be afraid to create new functions to pull out noise out of templates. You may have been conditioned to think of the view layer as an area of the app that should only contain declarative templates, but in reality, the view layer can house helper functions - good view layer code means that <em>templates</em> should be as declarative as possible, NOT that the view layer should avoid procedural logic altogether.</p>
+<p>Anyways, that&#39;s all I have for today. Hopefully, this article can help making your templates cleaner.</p>
+
+			]]></description>
+		</item>
+		<item>
 			<title>Lessons learned from Angular</title>
 			<link>http://lhorie.github.io/mithril-blog/lessons-learned-from-angular.html</link>
 			<description><![CDATA[
