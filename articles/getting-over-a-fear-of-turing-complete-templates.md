@@ -251,6 +251,8 @@ We can get rid of other flow control statements from views, in a similar way to 
 	])
 	```
 
-Remember we can also create other helper functions like `app.choose` above to express more intricate flow control, as we did w/ [`seven` in the Seinfeld app](building-a-seinfeld-app.html) a few weeks ago. Don't be afraid to create new functions to pull out noise out of templates. You may have been conditioned to think of the view layer as an area of the app that should only contain declarative templates, but in reality, the view layer can house helper functions - good view layer code means that *templates* should be as declarative as possible, NOT that the view layer should avoid procedural logic altogether.
+Remember we can also create other helper functions like `app.choose` above to express more intricate flow control, as we did w/ [`seven` in the Seinfeld app](building-a-seinfeld-app.html) a few weeks ago. Don't be afraid to create new functions to pull out noise out of templates. You may have been conditioned to think of the view layer as an area of the app that should only contain declarative templates, but in reality, the view layer can house helper functions as well.
+
+Good view layer code means that *templates* should be as declarative as possible, NOT that the view layer as a whole should avoid procedural logic altogether.
 
 Anyways, that's all I have for today. Hopefully, this article can help making your templates cleaner.
