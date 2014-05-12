@@ -127,7 +127,7 @@ app.tab1.view = function(ctrl) {
 
 ---
 
-We can now refactor away our switch statement. The problem with `switch` is that it's a statements, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a `switch`-like expression instead using a little trick from the world of Python: **dictionary switches**
+We can now refactor away our switch statement. The problem with `switch` is that it's a statement, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a `switch`-like expression instead using a little trick from the world of Python: **dictionary switches**
 
 ```javascript
 var subject = "John";
