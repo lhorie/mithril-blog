@@ -113,7 +113,7 @@ switch (ctrl.tab) {
 //...
 ```
 
-Doing this makes dependencies between the main module and each tab explicit. It also means we can then [reuse the modules for the tabs elsewhere](better-templates-with-fp.html). If, in your not-so-trivial app, you find that doing this exercise is a pain, then you just experienced the problem with what are known as "god functions". God functions are hard to maintain because the lack of explicitness provided by closures makes it hard to reason about the impact of changes as they cascade down through various unrelated parts of the app. It's usually a good idea to refactor big functions early, before thing grow too big and changing things becomes too cost-prohibitive.
+Doing this makes dependencies between the main module and each tab explicit. It also means we can then [reuse the modules for the tabs elsewhere](better-templates-with-fp.html). If, in your not-so-trivial app, you find that doing this exercise is a pain, then you just experienced the problem with what are known as "god functions". God functions are hard to maintain because the implicitness provided by closures makes it hard to reason about the impact of changes as they cascade down through various unrelated parts of the app. It's usually a good idea to refactor big functions early, before things grow too big and changing things becomes too cost-prohibitive.
 
 As a side note, I omitted the definitions of each module earlier, but what they are supposed to look like should hopefully be obvious (or at least easy to figure out). As an example, here's the skeleton of the `app.tab1` module, of which `app.tab1.view` is a part of:
 
