@@ -116,7 +116,7 @@ app.tab1.view = function(ctrl) {
 }
 </code></pre>
 <hr>
-<p>We can now refactor away our switch statement. The problem with <code>switch</code> is that it&#39;s a statements, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a <code>switch</code>-like expression instead using a little trick from the world of Python: <strong>dictionary switches</strong></p>
+<p>We can now refactor away our switch statement. The problem with <code>switch</code> is that it&#39;s a statement, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a <code>switch</code>-like expression instead using a little trick from the world of Python: <strong>dictionary switches</strong></p>
 <pre><code class="lang-javascript">var subject = &quot;John&quot;;
 
 var choice = {
