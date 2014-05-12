@@ -1,6 +1,6 @@
 ## Getting over a fear of turing complete templates
 
-One somewhat amusing criticism against turing complete templates like [Mithril](http://lhorie.github.io/mithril)'s is that the ability to write procedural code enables you to write crappy code. In this post we're going to ignore the fact that you can "write COBOL in any language", and that things like code reviews exist precisely to prevent this kind of problems. Rather, we're going to use another feature of turing complete programming languages - the ability to refactor and abstract away noisy code - to make our template more declarative (like HTML), and at the same time, more expressive and modular. 
+One somewhat amusing criticism against turing complete templating engines like [Mithril](http://lhorie.github.io/mithril)'s is that the ability to write procedural code enables you to write crappy code. In this post we're going to ignore the fact that you can "write COBOL in any language", and that things like code reviews exist precisely to prevent this kind of problems. Rather, we're going to use another feature of turing complete programming languages - the ability to refactor and abstract away noisy code - to make our template more declarative (like HTML), and at the same time, more expressive and modular. 
 
 When we talk about templates, generally, people consider procedural code to be crappy, because, when we think of HTML, a template is supposed to be declarative. Here's an example of code using procedural constructs:
 
