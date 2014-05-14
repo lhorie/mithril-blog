@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic" rel="stylesheet" />
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="an-exercise-in-awesomeness">An exercise in awesomeness</h2>
+<p>James Long wrote a <a href="http://jlongster.com/Removing-User-Interface-Complexity,-or-Why-React-is-Awesome">pretty nice article</a> about what makes a virtul-DOM based framework like React awesome.</p>
+<p>Since Mithril uses the same templating mechanism, I thought it would be a good exercise to re-implement some of the more interesting examples with Mithril to see how they compare.</p>
+<p>James used a made-on-the-spot 250-line toy library called &quot;Bloop&quot; to illustrate how React works. Mithril in its entirety - including the router and promise systems - is actually not a whole lot bigger (~500 lines) and does virtual DOM diffing like React (and it takes care of figuring out when to redraw, as opposed to spamming on requestAnimationFrame)</p>
+<h3 id="tabbed-ui">Tabbed UI</h3>
+<p>This example aimed to demonstrate the idea of storing data in a centralized location. I&#39;ve actually talked about this idea - a pattern that is known as view models in some circles - in the <a href="https://groups.google.com/d/msg/mithriljs/WOvJARwmOYA/ovA_HVTawnQJ">mailing list</a>. It&#39;s a great way to harmonize application state back into the familiar MVC design pattern. <a href="http://jsfiddle.net/kHaRa/">You can see the port of the example in action here</a></p>
+<p>Note we are using the same concepts of passing data down the component tree via <em>props</em> (which are really just data objects being passed as function parameters), and passing data up via events (i.e. we pass down event handler references as <em>props</em> and bind the handlers locally in the appropriate component via partial application)</p>
+<p>You can find James&#39; code <a href="https://gist.github.com/jlongster/3f32b2c7dce588f24c92">here</a> for comparison. A few things are slightly different: </p>
+<ul>
+<li><p>Instead of <code>if</code> statements in the <code>app</code> template, we&#39;re using a variation of <code>app.choose</code>, which I described in <a href="getting-over-a-fear-of-turing-complete-templates.html">this article</a>. </p>
+</li>
+<li><p>Instead of defining <code>randomizeColor</code> and <code>reset</code> as local instance methods in the <code>Settings</code> component, we&#39;re defining these methods in the model layer (i.e. we&#39;re using a more classic MVC style, which allows us to centralize and reuse logic).</p>
+</li>
+<li><p>I put the textarea with the JSON data in the about tab. It updates the data when you change its value just like the one inlined in the article.</p>
+</li>
+<li><p>We don&#39;t actually need full blown components in Mithril: since the Bloop components are stateless, templates are enough to modularize our code in the same way as in James&#39; article.</p>
+</li>
+</ul>
+<p>Because data is centralized and the code structure is largely the same, it&#39;s possible to do undos in the same manner that was outlined in the article. The code for that example is pretty big and I don&#39;t have the time to port it over, so I&#39;ll leave it as an exercise to the reader to try to implement it Mithril. If anything, that&#39;s a good exercise to solidify an understanding of the data flow concepts from the tabs example.</p>
+<h3 id="occlusion-culling">Occlusion culling</h3>
+<p>This example shows how we can implement efficient templates that render only what is visible on screen. <a href="http://jsfiddle.net/7JNUy/1/">See it in action here.</a></p>
+<p>I think the article didn&#39;t do this technique enough justice in terms of highlighting real world applications, but this is a really powerful technique that is relevant for things like infinite scrolling, deferring rendering of below-the-fold content to help breaking the <a href="http://alistapart.com/blog/post/breaking-the-1000ms-time-to-glass-mobile-barrier">mobile 1000ms barrier</a> and making parallax sites snappy.</p>
+<p>The Mithril code structure is largely the same, but without spamming on requestAnimationFrame. Instead we request redraws only the scroll event, and Mithril internally throttles these calls. One philosophical difference is that I place code related to <code>window.onscroll</code> / <code>window.innerHeight</code> in the model layer. This may seem unintuitive, but remember that <code>innerHeight</code> is being used as a <em>data source</em> that is updated asynchronously by <code>window.onscroll</code>.</p>
+<h3 id="conclusions">Conclusions</h3>
+<p>As the examples above show, it&#39;s relatively straightforward to use the componentization / data flow model that React employs, and we can employ all of the same techniques and insights in Mithril.</p>
+<p>A recurring difference in philosophy is that React is very component-centric and OOP-driven, whereas Mithril code relies more on design pattern, with decoupled helpers (a style that is most commonly seen in the Lisp world). Personally, I believe the OOP approach can be detrimental sometimes, e.g. <code>randomizeColor</code> is more about the data than the widget that calls it, so tying it to the component instance makes it less reusable. Of course, both React and Mithril workflows can be adapted to look more like the other, so this is mostly just a question of expected defaults.</p>
+<p>Some commenters on HN mentioned that React also lacks a canonical way of structuring non-view-related aspects (something that I believe Flux attempts to address). On the one hand, I do agree with the sentiment (and that&#39;s why Mithril provides model-level utilities), but on the other hand, there&#39;s only so much a framework can do when it comes to the model layer. This is where the programmer is supposed to put their analytical skills to work, and I think design patterns as blueprints for the implementation are more useful tools than opinionated implementations that force one or another pattern on us (ActiveRecords comes to mind).</p>
+<p>We saw an example of that with my handling of <code>window.innerHeight</code>: the code is pretty much the same - the only thing that really changed was how we interpreted it in the context of MVC. I see design patterns as a way to map a logical mental model to an implementation, and as a tool to shorten code, NOT as a mold that we must implement with code so that more code can conform to it. This is the core philosophical difference between React&#39;s OOP-style approach and Mithril&#39;s.</p>
+<p>Anyways, I hope this article provided a bit of architecture design background to the conversation. Like many who read James&#39; articles, I&#39;m very excited when looking at the possibilities that virtual DOM systems enable, and I didn&#39;t want to lose the momentum on my never-ending quest for a framework that truly gets out of our way.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="an-exercise-in-awesomeness.html">An exercise in awesomeness</a></li>
+								<li><a href="getting-over-a-fear-of-turing-complete-templates.html">Getting over a fear of turing complete templates</a></li>
+								<li><a href="lessons-learned-from-angular.html">Lessons learned from Angular</a></li>
+								<li><a href="curry-flavored-promises.html">Curry flavored promises</a></li>
+								<li><a href="better-templates-with-fp.html">Better templates with FP</a></li>
+								<li><a href="building-a-seinfeld-app.html">Building a "Seinfeld" app</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

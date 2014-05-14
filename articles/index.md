@@ -1,5 +1,6 @@
 ## Articles
 
+- [An exercise in awesomeness](an-exercise-in-awesomeness.html) - May 14, 2014
 - [Getting over a fear of turing complete templates](getting-over-a-fear-of-turing-complete-templates.html) - May 11, 2014
 - [Lessons learned from Angular](lessons-learned-from-angular.html) - May 4, 2014
 - [Curry flavored promises](curry-flavored-promises.html) - April 27, 2014
