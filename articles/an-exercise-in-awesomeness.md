@@ -8,7 +8,7 @@ James used a made-on-the-spot 250-line toy library called "Bloop" to illustrate 
 
 ### Tabbed UI
 
-This example aimed to demonstrate the idea of storing data in a centralized location. I've actually talked about this idea - a pattern that is known as view models in some circles - in the [mailing list](https://groups.google.com/d/msg/mithriljs/WOvJARwmOYA/ovA_HVTawnQJ). It's a great way to harmonize application state back into the familiar MVC design pattern. [You can see the port of the example in action here](http://jsfiddle.net/kHaRa/)
+This example aimed to demonstrate the idea of storing data in a centralized location. I've actually talked about this idea - a pattern that is known as view models in some circles - in the [mailing list](https://groups.google.com/d/msg/mithriljs/WOvJARwmOYA/ovA_HVTawnQJ). It's a great way to harmonize application state back into the familiar MVC design pattern. [You can see the port of the example in action here](http://jsfiddle.net/kHaRa/1/)
 
 Note we are using the same concepts of passing data down the component tree via *props* (which are really just data objects being passed as function parameters), and passing data up via events (i.e. we pass down event handler references as *props* and bind the handlers locally in the appropriate component via partial application)
 
