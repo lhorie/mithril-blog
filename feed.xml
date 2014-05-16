@@ -8,217 +8,35 @@
 			<title>An exercise in awesomeness</title>
 			<link>http://lhorie.github.io/mithril-blog/an-exercise-in-awesomeness.html</link>
 			<description><![CDATA[
-<h2 id="getting-over-a-fear-of-turing-complete-templates">Getting over a fear of turing complete templates</h2>
-<p>One somewhat amusing criticism against turing complete templating engines like <a href="http://lhorie.github.io/mithril">Mithril</a>&#39;s is that the ability to write procedural code enables you to write crappy code. In this post we&#39;re going to ignore the fact that you can &quot;write COBOL in any language&quot;, and that things like code reviews exist precisely to prevent this kind of problems. Rather, we&#39;re going to use another feature of turing complete programming languages - the ability to refactor and abstract away noisy code - to make our template more declarative (like HTML), and at the same time, more expressive and modular. </p>
-<p>When we talk about templates, generally, people consider procedural code to be crappy, because, when we think of HTML, a template is supposed to be declarative. Here&#39;s an example of code using procedural constructs:</p>
-<pre><code class="lang-javascript">var app = {}
-
-app.view = function(ctrl) {
-    var currentTab;
-
-    switch (ctrl.tab) {
-        case &quot;tab1&quot;:
-            currentTab = m(&quot;.tab&quot;, &quot;tab 1 here...&quot;);
-            break;
-        case &quot;tab2&quot;:
-            currentTab = m(&quot;.tab&quot;, &quot;tab 2 here...&quot;);
-            break;
-        case &quot;tab3&quot;:
-            currentTab = m(&quot;.tab&quot;, &quot;tab 3 here...&quot;);
-            break;
-    }
-
-    return m(&quot;.container&quot;, [
-        m(&quot;ul&quot;, [
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
-        ]),
-        currentTab
-    ]);
-};
-</code></pre>
-<p>Let&#39;s be honest, having a <code>switch</code> statement to assign to a variable kinda sticks out like a sore thumb, doesn&#39;t it?</p>
-<p>One way we can improve the code is by using <a href="http://lhorie.github.io/mithril/components.html">components</a>. This might sound like it&#39;s gonna be a lot of refactoring and a lot of code, but it&#39;s actually pretty straightforward:</p>
-<p>All we need to do is pull out the subtemplates for each tab into separate functions:</p>
-<pre><code class="lang-javascript">//turn each tab into a separate module
-app.tab1.view = function(ctrl) {
-    return m(&quot;.tab&quot;, &quot;tab 1 here...&quot;)
-};
-
-app.tab2.view = function(ctrl) {
-    return m(&quot;.tab&quot;, &quot;tab 2 here...&quot;)
-};
-
-app.tab3.view = function(ctrl) {
-    return m(&quot;.tab&quot;, &quot;tab 3 here...&quot;)
-};
-</code></pre>
-<p>And then substitute them back into the main template:</p>
-<pre><code class="lang-javascript">app.view = function(ctrl) {
-    var currentTab;
-
-    switch (ctrl.tab) {
-        case &quot;tab1&quot;:
-            currentTab = app.tab1.view(ctrl);
-            break;
-        case &quot;tab2&quot;:
-            currentTab = app.tab2.view(ctrl);
-            break;
-        case &quot;tab3&quot;:
-            currentTab = app.tab3.view(ctrl);
-            break;
-    }
-
-    return m(&quot;.container&quot;, [
-        m(&quot;ul&quot;, [
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
-        ]),
-        currentTab
-    ]);
-};
-</code></pre>
-<p>While we&#39;re at it, it&#39;s also a good idea to split the logic from our initial module&#39;s controller into the respective tab controllers:</p>
-<pre><code class="lang-javascript">app.controller = function() {
-    //the initial tab
-    this.tab = &quot;tab1&quot;;
-
-    //instantiate controllers for tabs
-    //the logic for each tab should be in the respective controller
-    this.tab1 = new app.tab1.controller(this);
-    this.tab2 = new app.tab2.controller(this);
-    this.tab3 = new app.tab3.controller(this);
-};
-
-//...
-//notice we&#39;re passing the respective tab controllers here
-switch (ctrl.tab) {
-    case &quot;tab1&quot;:
-        currentTab = app.tab1.view(ctrl.tab1);
-        break;
-    case &quot;tab2&quot;:
-        currentTab = app.tab2.view(ctrl.tab2);
-        break;
-    case &quot;tab3&quot;:
-        currentTab = app.tab3.view(ctrl.tab2);
-        break;
-}
-//...
-</code></pre>
-<p>Doing this makes dependencies between the main module and each tab explicit. It also means we can then <a href="better-templates-with-fp.html">reuse the modules for the tabs elsewhere</a>. If, in your not-so-trivial app, you find that doing this exercise is a pain, then you just experienced the problem with what are known as &quot;god functions&quot;. God functions are hard to maintain because the implicitness provided by closures makes it hard to reason about the impact of changes as they cascade down through various unrelated parts of the app. It&#39;s usually a good idea to refactor big functions early, before things grow too big and changing things becomes too cost-prohibitive.</p>
-<p>As a side note, I omitted the definitions of each module earlier, but what they are supposed to look like should hopefully be obvious (or at least easy to figure out). As an example, here&#39;s the skeleton of the <code>app.tab1</code> module, of which <code>app.tab1.view</code> is a part of:</p>
-<pre><code class="lang-javascript">var app.tab1 = {}
-app.tab1.controller = function() { /*...*/ }
-app.tab1.view = function(ctrl) {
-    return m(&quot;.tab&quot;, &quot;tab 1 here...&quot;)
-}
-</code></pre>
-<hr>
-<p>We can now refactor away our switch statement. The problem with <code>switch</code> is that it&#39;s a statement, i.e. it cannot be nested inside expressions, which is what our templates are made of. We can create a <code>switch</code>-like expression instead using a little trick from the world of Python: <strong>dictionary switches</strong></p>
-<pre><code class="lang-javascript">var subject = &quot;John&quot;;
-
-var choice = {
-    &quot;John&quot;: &quot;lemonade&quot;,
-    &quot;Bob&quot;: &quot;orange juice&quot;,
-    &quot;Mary&quot;: &quot;tea&quot;,
-}[subject];
-
-//choice is &quot;lemonade&quot;
-</code></pre>
-<p>This is just a regular Javascript object, with the twist that we immediately access one of its properties to get a value that corresponds to the key we accessed.</p>
-<p>We can use this technique to create a tiny helper function:</p>
-<pre><code class="lang-javascript">//helper function
-app.choose = function(key, options) {
-    var option = options[key];
-    return options[0](option[1]);
-};
-</code></pre>
-<p>And we can then use this helper function to replace the <code>switch</code> statement:</p>
-<pre><code class="lang-javascript">app.view = function(ctrl) {
-    var currentTab = app.choose(ctrl.tab, {
-        &quot;tab1&quot;: [app.tab1.view, ctrl.tab1],
-        &quot;tab2&quot;: [app.tab2.view, ctrl.tab2],
-        &quot;tab3&quot;: [app.tab3.view, ctrl.tab3]
-    })
-
-    return m(&quot;.container&quot;, [
-        m(&quot;ul&quot;, [
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
-        ]),
-        currentTab
-    ]);
-};
-</code></pre>
-<p>Or even better, we can drop the variable assignment altogether:</p>
-<pre><code class="lang-javascript">app.view = function(ctrl) {
-    return m(&quot;.container&quot;, [
-        m(&quot;ul&quot;, [
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 1&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 2&quot;)]),
-            m(&quot;li&quot;, [m(&quot;a&quot;, &quot;Tab 3&quot;)])
-        ]),
-        //here we use our helper
-        app.choose(ctrl.tab, {
-            &quot;tab1&quot;: [app.tab1.view, ctrl.tab1],
-            &quot;tab2&quot;: [app.tab2.view, ctrl.tab2],
-            &quot;tab3&quot;: [app.tab3.view, ctrl.tab3]
-        })
-    ]);
-};
-</code></pre>
-<p>Doesn&#39;t that look cleaner? Let&#39;s break things down a little bit.</p>
-<p><code>app.choose</code> accepts 2 parameters: a key and a dictionary. In the code above, the dictionary switch has three options, <code>tab1</code>, <code>tab2</code> and <code>tab3</code>. We pick one of those via the square bracket notation and <code>ctrl.tab</code> (which is <code>tab1</code> on initial load, if you recall the controller code ealier).</p>
-<p>The value that corresponds to <code>tab1</code> is <code>[app.tab1.view, ctrl.tab1]</code>. <code>app.choose</code> calls the first item in the array as a function and passes the second one as an argument. In other words, it calls <code>app.tab1.view(ctrl.tab1)</code>, thus rendering the <code>app.tab1</code> component.</p>
-<p>Phew!</p>
-<p>A neat thing to notice is that <code>app.choose</code> is <em>also</em> a reusable tool. We can use it to toggle other tab groups, or for that matter, page menus, accordions, or any switchable widget. Not bad for a 2-liner helper function, huh?</p>
-<hr>
-<h3 id="last-thoughts">Last thoughts</h3>
-<p>Before we wrap up, I just wanted to mention one last thing for those who might be having trouble keeping templates declarative. These are probably a little more well known tricks to savvier Javascript developers, but I&#39;ve had quite a few people use statement-based idioms when asking me questions, and I think it&#39;s worthwhile being thorough.</p>
-<p>We can get rid of other flow control statements from views, in a similar way to how we replaced <code>switch</code>:</p>
+<h2 id="an-exercise-in-awesomeness">An exercise in awesomeness</h2>
+<p>James Long wrote a <a href="http://jlongster.com/Removing-User-Interface-Complexity,-or-Why-React-is-Awesome">pretty nice article</a> about what makes a virtul-DOM based framework like React awesome.</p>
+<p>Since Mithril uses the same templating mechanism, I thought it would be a good exercise to re-implement some of the more interesting examples with Mithril to see how they compare.</p>
+<p>James used a made-on-the-spot 250-line toy library called &quot;Bloop&quot; to illustrate how React works. Mithril in its entirety - including the router and promise systems - is actually not a whole lot bigger (~500 lines) and does virtual DOM diffing like React (and it takes care of figuring out when to redraw, as opposed to spamming on requestAnimationFrame)</p>
+<h3 id="tabbed-ui">Tabbed UI</h3>
+<p>This example aimed to demonstrate the idea of storing data in a centralized location. I&#39;ve actually talked about this idea - a pattern that is known as view models in some circles - in the <a href="https://groups.google.com/d/msg/mithriljs/WOvJARwmOYA/ovA_HVTawnQJ">mailing list</a>. It&#39;s a great way to harmonize application state back into the familiar MVC design pattern. <a href="http://jsfiddle.net/kHaRa/1/">You can see the port of the example in action here</a></p>
+<p>Note we are using the same concepts of passing data down the component tree via <em>props</em> (which are really just data objects being passed as function parameters), and passing data up via events (i.e. we pass down event handler references as <em>props</em> and bind the handlers locally in the appropriate component via partial application)</p>
+<p>You can find James&#39; code <a href="https://gist.github.com/jlongster/3f32b2c7dce588f24c92">here</a> for comparison. A few things are slightly different: </p>
 <ul>
-<li><p><code>if</code> statements can be replaced with the ternary operator:</p>
-<pre><code class="lang-javascript">//instead of this
-var widget
-if (someCondition) {
-   widget = m(&quot;div&quot;, &quot;widget here&quot;)
-}
-
-m(&quot;div&quot;, [
-   widget
-])
-
-//we can use this
-m(&quot;div&quot;, [
-   someCondition ? m(&quot;div&quot;, &quot;widget here&quot;) : &quot;&quot;
-])
-</code></pre>
+<li><p>Instead of <code>if</code> statements in the <code>app</code> template, we&#39;re using a variation of <code>app.choose</code>, which I described in <a href="getting-over-a-fear-of-turing-complete-templates.html">this article</a>. </p>
 </li>
-<li><p>loops can usually be replaced with <code>Array.prototype.map()</code></p>
-<pre><code class="lang-javascript">//instead of this
-var items = [];
-for (var i = 0; i &lt; someList.length; i++) {
-   var tpl = m(&quot;div&quot;, &quot;list item &quot; + i)
-   items.push(tpl);
-};
-
-m(&quot;div&quot;, items)
-
-//we can use this
-m(&quot;div&quot;, [
-   someList.map(function(item, i) {
-       return m(&quot;div&quot;, &quot;list item &quot; + i)
-   })
-])
-</code></pre>
+<li><p>Instead of defining <code>randomizeColor</code> and <code>reset</code> as local instance methods in the <code>Settings</code> component, we&#39;re defining these methods in the model layer (i.e. we&#39;re using a more classic MVC style, which allows us to centralize and reuse logic).</p>
+</li>
+<li><p>I put the textarea with the JSON data in the about tab. It updates the data when you change its value just like the one inlined in the article.</p>
+</li>
+<li><p>We don&#39;t actually need full blown components in Mithril: since the Bloop components are stateless, templates are enough to modularize our code in the same way as in James&#39; article.</p>
 </li>
 </ul>
-<p>Remember we can also create other helper functions like <code>app.choose</code> above to express more intricate flow control, as we did w/ <a href="building-a-seinfeld-app.html"><code>seven</code> in the Seinfeld app</a> a few weeks ago. Don&#39;t be afraid to create new functions to pull out noise out of templates. You may have been conditioned to think of the view layer as an area of the app that should only contain declarative templates, but in reality, the view layer can house helper functions as well.</p>
-<p>Good view layer code means that <em>templates</em> should be as declarative as possible, NOT that the view layer as a whole should avoid procedural logic altogether.</p>
-<p>Anyways, that&#39;s all I have for today. Hopefully, this article can help making your templates cleaner.</p>
+<p>Because data is centralized and the code structure is largely the same, it&#39;s possible to do undos in the same manner that was outlined in the article. The code for that example is pretty big and I don&#39;t have the time to port it over, so I&#39;ll leave it as an exercise to the reader to try to implement it Mithril. If anything, that&#39;s a good exercise to solidify an understanding of the data flow concepts from the tabs example.</p>
+<h3 id="occlusion-culling">Occlusion culling</h3>
+<p>This example shows how we can implement efficient templates that render only what is visible on screen. <a href="http://jsfiddle.net/7JNUy/1/">See it in action here.</a></p>
+<p>I think the article didn&#39;t do this technique enough justice in terms of highlighting real world applications, but this is a really powerful technique that is relevant for things like infinite scrolling, deferring rendering of below-the-fold content to help breaking the <a href="http://alistapart.com/blog/post/breaking-the-1000ms-time-to-glass-mobile-barrier">mobile 1000ms barrier</a> and making parallax sites snappy.</p>
+<p>The Mithril code structure is largely the same, but without spamming on requestAnimationFrame. Instead we request redraws only the scroll event, and Mithril internally throttles these calls. One philosophical difference is that I place code related to <code>window.onscroll</code> / <code>window.innerHeight</code> in the model layer. This may seem unintuitive, but remember that <code>innerHeight</code> is being used as a <em>data source</em> that is updated asynchronously by <code>window.onscroll</code>.</p>
+<h3 id="conclusions">Conclusions</h3>
+<p>As the examples above show, it&#39;s relatively straightforward to use the componentization / data flow model that React employs, and we can employ all of the same techniques and insights in Mithril.</p>
+<p>A recurring difference in philosophy is that React is very component-centric and OOP-driven, whereas Mithril code relies more on design pattern, with decoupled helpers (a style that is most commonly seen in the Lisp world). Personally, I believe the OOP approach can be detrimental sometimes, e.g. <code>randomizeColor</code> is more about the data than the widget that calls it, so tying it to the component instance makes it less reusable. Of course, both React and Mithril workflows can be adapted to look more like the other, so this is mostly just a question of expected defaults.</p>
+<p>Some commenters on HN mentioned that React also lacks a canonical way of structuring non-view-related aspects (something that I believe Flux attempts to address). On the one hand, I do agree with the sentiment (and that&#39;s why Mithril provides model-level utilities), but on the other hand, there&#39;s only so much a framework can do when it comes to the model layer. This is where the programmer is supposed to put their analytical skills to work, and I think design patterns as blueprints for the implementation are more useful tools than opinionated implementations that force one or another pattern on us (ActiveRecords comes to mind).</p>
+<p>We saw an example of that with my handling of <code>window.innerHeight</code>: the code is pretty much the same - the only thing that really changed was how we interpreted it in the context of MVC. I see design patterns as a way to map a logical mental model to an implementation, and as a tool to shorten code, NOT as a mold that we must implement with code so that more code can conform to it. This is the core philosophical difference between React&#39;s OOP-style approach and Mithril&#39;s.</p>
+<p>Anyways, I hope this article provided a bit of architecture design background to the conversation. Like many who read James&#39; articles, I&#39;m very excited when looking at the possibilities that virtual DOM systems enable, and I didn&#39;t want to lose the momentum on my never-ending quest for a framework that truly gets out of our way.</p>
 
 			]]></description>
 		</item>
