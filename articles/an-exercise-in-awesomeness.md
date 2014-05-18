@@ -1,5 +1,7 @@
 ## An exercise in awesomeness
 
+*May 14, 2014*
+
 James Long wrote a [pretty nice article](http://jlongster.com/Removing-User-Interface-Complexity,-or-Why-React-is-Awesome) about what makes a virtul-DOM based framework like React awesome.
 
 Since Mithril uses the same templating mechanism, I thought it would be a good exercise to re-implement some of the more interesting examples with Mithril to see how they compare.

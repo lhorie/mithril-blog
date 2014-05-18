@@ -1,5 +1,7 @@
 ## Piggybacking requests in a widgety world
 
+*May 18, 2014*
+
 A while back I was building a dashboard tool to display various metrics about a given person. This dashboard had a bunch of widgets, which could be toggled on or off depending on user's preferences. Some widgets are also used elsewhere in the application, so, of course, each widget needed to be self contained.
 
 One recurring pattern was that I needed to display some user information in each widget (for example, the user's name).
