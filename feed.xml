@@ -5,6 +5,108 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Piggybacking requests in a widgety world</title>
+			<link>http://lhorie.github.io/mithril-blog/piggybacking-requests-in-a-widgety-world.html</link>
+			<description><![CDATA[
+<h2 id="piggybacking-requests-in-a-widgety-world">Piggybacking requests in a widgety world</h2>
+<p>A while back I was building a dashboard tool to display various metrics about a given person. This dashboard had a bunch of widgets, which could be toggled on or off depending on user&#39;s preferences. Some widgets are also used elsewhere in the application, so, of course, each widget needed to be self contained.</p>
+<p>One recurring pattern was that I needed to display some user information in each widget (for example, the user&#39;s name).</p>
+<p>Now, if the name was the only piece of data that we shared between widgets, we could consider doing a URL hack:</p>
+<pre><code>http://example.com/dashboard/John_Doe
+</code></pre><p>Of course, this doesn&#39;t really work once you need more pieces of information (let&#39;s say the user&#39;s email), and this approach also carries maintenance liabilities: what if the user got married and changed their name? That would break our URL.</p>
+<p>So, since we were using a RESTful web service architecture, the responsible thing to do was to have a <code>users</code> web service, and have the widgets send requests to it.</p>
+<p>If you had to implement a client-side model layer to support this architecture, you&#39;d probably create some sort of CRUD class: maybe have a <code>list</code> method that fetches a list of users, right?</p>
+<pre><code class="lang-javascript">//our model entity
+var User = {
+    list: function() {
+        return m.request({method: &quot;GET&quot;, url: &quot;/api/users&quot;})
+    }
+};
+
+//a module that uses our model entity
+var widget1 = {};
+widget1.controller = function() {
+    this.users = User.list()
+};
+</code></pre>
+<p>But right away, there&#39;s a problem: if more than one widget exists in the page at the same time, and each of those widgets needs user information, then each widget needs to individually call the web service, causing the application to send multiple identical requests to the server! (Remember, that some of these widgets are used elsewhere, so we can&#39;t move this controller logic &quot;up a level&quot;)</p>
+<p>Here&#39;s a snippet of <a href="http://lhorie.github.io/mithril">Mithril</a> code to illustrate:</p>
+<pre><code class="lang-javascript">var hiredThisYear = function() {/*filter by hire date*/};
+var inJohnDoeTeam = function() {/* filter by team*/};
+
+var widget1 = {};
+widget1.controller = function() {
+    this.users = User.list()
+        .then(inJohnDoeTeam);
+};
+
+var widget2 = {};
+widget2.controller = function() {
+    this.users = User.list()
+        .then(hiredThisYear);
+};
+
+new widget1.controller();
+new widget2.controller();
+</code></pre>
+<p>Notice <code>widget1</code> is trying to compute a list of users in John Doe&#39;s team, and <code>widget2</code> is trying to compute a list of users who were hired this year. Both make identical AJAX requests to <code>/api/users</code>. What we really want is to send a request only once.</p>
+<p>This is where <strong>separation of concerns</strong> comes in: the reason why the MVC pattern has a model layer instead of just letting us make naked AJAX requests straight from controllers is precisely so we can abstract away the implementation details regarding how data is handled.</p>
+<p>In our case, we want to ensure that requests aren&#39;t duplicated, so all we need to do is change the implementation of our model entity to make duplicate requests piggyback off the first pending request:</p>
+<pre><code class="lang-javascript">var cache = {};
+var User = {
+    list: function() {
+        if (!cache[&quot;User.list&quot;]) {
+            cache[&quot;User.list&quot;] = m.request({method: &quot;GET&quot;, url: &quot;/api/users&quot;})
+                .then(function(value) {
+                    delete cache[&quot;User.list&quot;];
+                    return value;
+                });
+        }
+        return cache[&quot;User.list&quot;];
+    }
+};
+</code></pre>
+<p>This way, when two or more calls to <code>User.list</code> happen at the same time, only the first one sends off a request. All the calls then return the same promise. After the promise resolves, we clear the cache via the <code>then</code> callback so we can request new fresh data at a later time.</p>
+<pre><code class="lang-javascript">var widget1 = {};
+widget1.controller = function() {
+    this.users = User.list()
+        .then(inJohnDoeTeam);
+};
+
+var widget2 = {};
+widget1.controller = function() {
+    this.users = User.list()
+        .then(hiredThisYear);
+};
+
+new widget1.controller();
+new widget2.controller();
+</code></pre>
+<p>As you can see above, the controller layer code looks exactly like it did before, but now instantiating the two widgets at the same time only sends one request to the server.</p>
+<p>With some small changes, this technique can also be used for parameterized requests:</p>
+<pre><code class="lang-javascript">var cache = {};
+var User = {
+    list: function(data) {
+        var key = &quot;User.list&quot; + JSON.stringify(data)
+        if (!cache[key]) {
+            cache[key] = m.request({method: &quot;GET&quot;, url: &quot;/api/users&quot;, data: data})
+                .then(function(value) {
+                    delete cache[&quot;User.list&quot;];
+                    return value;
+                });
+        }
+        return cache[key];
+    }
+};
+</code></pre>
+<p>One neat thing about promises is that calling <code>then</code> multiple times from the same promise (which is what we&#39;re doing now) simply returns new promises for each call. Every one of those returned promises resolve to values that are independent of what&#39;s happening in sibling computation chains, so <code>then(inJohnDoeTeam)</code> is not affected by <code>then(hiredThisYear)</code> and therefore, when the AJAX request completes, the list of users for <code>widget1</code> is only filtered to users in John&#39;s team, and the list in <code>widget2</code> is only filtered by users hired this year, as expected.</p>
+<p>In other words, the controller code continues to work correctly <em>without changes</em>.</p>
+<p>I can&#39;t stress enough how important this is. Typically, you only start noticing (or financially caring about) performance problems when an app is already at a stage where there&#39;s a lot of code written. Being able to conceptualize a performance optimization like this at the design pattern level, and being able to implement it with minimal disruption to a large production application is a great example of well written code shining.</p>
+<p>If you didn&#39;t get the point of MVC before, or if you think it doesn&#39;t bring any benefits, I would urge you to take some time to challenge yourself and try to understand the purpose behind the MVC design pattern. Your future self might thank you later.</p>
+
+			]]></description>
+		</item>
+		<item>
 			<title>An exercise in awesomeness</title>
 			<link>http://lhorie.github.io/mithril-blog/an-exercise-in-awesomeness.html</link>
 			<description><![CDATA[
