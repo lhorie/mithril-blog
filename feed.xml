@@ -15,7 +15,7 @@
 <pre><code>http://example.com/dashboard/John_Doe
 </code></pre><p>Of course, this doesn&#39;t really work once you need more pieces of information (let&#39;s say the user&#39;s email), and this approach also carries maintenance liabilities: what if the user got married and changed their name? That would break our URL.</p>
 <p>So, since we were using a RESTful web service architecture, the responsible thing to do was to have a <code>users</code> web service, and have the widgets send requests to it.</p>
-<p>For my case, the web service that was getting called repeatedly was one to return a single user, but for the sake of making this discussion more interesting, I&#39;m going to pretend that our widgets dealt with lists of users.</p>
+<p>For my case, the web service that was getting called repeatedly was one to return a single user, but for the sake of making the point of this discussion clearer, I&#39;m going to pretend that our widgets dealt with a small lists of users.</p>
 <p>If you had to implement a client-side model layer to support this architecture, you&#39;d probably create some sort of CRUD class: maybe have a <code>list</code> method that fetches a list of users, right?</p>
 <pre><code class="lang-javascript">//our model entity
 var User = {

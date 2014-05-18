@@ -14,7 +14,7 @@ Of course, this doesn't really work once you need more pieces of information (le
 
 So, since we were using a RESTful web service architecture, the responsible thing to do was to have a `users` web service, and have the widgets send requests to it.
 
-For my case, the web service that was getting called repeatedly was one to return a single user, but for the sake of making this discussion more interesting, I'm going to pretend that our widgets dealt with a small lists of users.
+For my case, the web service that was getting called repeatedly was one to return a single user, but for the sake of making the point of this discussion clearer, I'm going to pretend that our widgets dealt with a small lists of users.
 
 If you had to implement a client-side model layer to support this architecture, you'd probably create some sort of CRUD class: maybe have a `list` method that fetches a list of users, right?
 
