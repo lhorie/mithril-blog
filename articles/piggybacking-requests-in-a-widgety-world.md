@@ -112,7 +112,7 @@ var User = {
 		if (!cache[key]) {
 			cache[key] = m.request({method: "GET", url: "/api/users", data: data})
 				.then(function(value) {
-					delete cache["User.list"];
+					delete cache[key];
 					return value;
 				});
 		}
