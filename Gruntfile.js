@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/piggybacking-requests-in-a-widgety-world.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/interview-with-james-long.md"], dest: "feed.xml"}]
 			}
 		}
 	});
