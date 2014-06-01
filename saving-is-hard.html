@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="saving-is-hard">Saving is hard</h2>
+<p>When we first come across the idea of RESTful web services over HTTP, the first thing we usually learn is that, instead of defining a URL like &quot;/getThings/&quot;, the <code>GET</code> method is the way to express that we want to get things from the server, e.g. (<code>GET /thing/</code>). <code>DELETE</code> deletes things, so the rest of the HTTP methods should all be more or less the same deal, right?</p>
+<p>As it turns out, inserting and updating things are kind of complicated: there is the <code>POST</code> method that we&#39;ve all used for both purposes in the past, and then we discover there are also <code>PUT</code> and <code>PATCH</code>.</p>
+<hr>
+<h3 id="post">POST</h3>
+<p>The HTTP spec is a bit of a blabbermouth. Here&#39;s what it says about <code>POST</code>:</p>
+<pre><code>The POST method is used to request that the origin server accept the entity enclosed in the request as a new subordinate of the resource identified by the Request-URI in the Request-Line
+</code></pre><p>What this means is that <code>POST</code> is meant to be used for creating entities as part of something else. Think of that something as an Array, and of <code>POST</code> as of its <code>push</code> method: when we don&#39;t know the index which we are putting our item at, we <code>push()</code> it and get the array index back that we can use to identify our item later. Same with <code>POST</code>: when we don&#39;t know the ID of the entity, we <code>POST</code> to the list so we can find out the ID from the response. Then we can <code>GET</code> the entity by ID later.</p>
+<p>For example, let&#39;s say an app deals with users, which are represented by the URL <code>/users/</code>. We can <code>POST</code> a new user to this URL even if this user entity does not have an ID. The response should tell us an ID that will let us later find it, e.g. <code>GET /users/1</code></p>
+<p>We are <em>not</em> supposed to send a <code>POST /users/1</code> request if we are looking to update the user whose ID is 1</p>
+<pre><code class="lang-javascript">//assuming the list of users is empty
+//create new user in the list of users
+var newUser = {name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+m.request({method: &quot;POST&quot;, url: &quot;/users/&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+    })
+
+//retrive the  user
+m.request({method: &quot;GET&quot;, url: &quot;/users/1&quot;})
+    .then(function(response) {
+        console.log(response) // {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+    })
+
+
+
+//the following is INCORRECT usage of POST
+var newUser = {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+//notice ID in the URL, so this request should return an error
+m.request({method: &quot;POST&quot;, url: &quot;/users/1&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // this should not get called
+    }, function(error) {
+        console.log(error) // &quot;cannot add user as child of itself&quot;
+    })
+</code></pre>
+<hr>
+<h3 id="put">PUT</h3>
+<p>Here&#39;s what the spec says about <code>PUT</code>:</p>
+<pre><code>The PUT method requests that the enclosed entity be stored under the supplied Request-URI. If the Request-URI refers to an already existing resource, the enclosed entity SHOULD be considered as a modified version of the one residing on the origin server. If the Request-URI does not point to an existing resource, and that URI is capable of being defined as a new resource by the requesting user agent, the origin server can create the resource with that URI.
+</code></pre><p>This means <code>PUT</code> is meant to be used to update or insert (aka &quot;upsert&quot;) into whatever is represented by the URL. Again, using the Array analogy, <code>PUT</code> is somewhat like <code>list[i] = value</code>, where <code>i</code> is explicitly in the URL. This operation may overwrite anything that is already there, or it might add a new thing if nothing exists at that index. An important implication is that just like assigning <code>list[i] = value</code> multiple times always results in the same thing, <code>PUT</code> is also not supposed to have side effects.</p>
+<p>For example, we can send a <code>PUT /users/1</code> request to add or update a user whose ID is 1.</p>
+<pre><code class="lang-javascript">//assuming the same list of users as before
+//create new user in the list of users
+var newUser = {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+m.request({method: &quot;PUT&quot;, url: &quot;/users/2&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+    })
+
+//update the user
+m.request({method: &quot;PUT&quot;, url: &quot;/users/2&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+        //notice no data has changed
+    })
+
+//the following is INCORRECT usage of PUT
+var newUser = {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+//notice URL has no ID, so this request should return an error
+m.request({method: &quot;PUT&quot;, url: &quot;/users/&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // this should not get called
+    }, function(error) {
+        console.log(error) // &quot;cannot replace list of users&quot;
+    })
+</code></pre>
+<hr>
+<h3 id="patch">PATCH</h3>
+<pre><code>The PATCH method requests that a set of changes described in the request entity be applied to the resource identified by the Request-URI. The set of changes is represented in a format called a &quot;patch document&quot; identified by a media type. If the Request-URI does not point to an existing resource, the server MAY create a new resource, depending on the patch document type (whether it can logically modify a null resource) and permissions, etc.
+</code></pre><p><code>PATCH</code> is an interesting method: it is meant to be used as a mechanism to batch operations. In our Array analogy, it&#39;s similar (but not analogous) to <code>splice</code>. Instead of accepting just data, it accepts a document that contains instructions on what to do with the attached data. It can add, delete and modify items to the list. The spec doesn&#39;t require it to be idempotent (i.e. it can perform irreversible actions, such as deleting items, sending out emails or making a purchase), but it requires that all the operations requested must be done atomically, i.e. either all of them succeed or the entire batch must be rolled back and rejected, no partial updates allowed.</p>
+<pre><code class="lang-javascript">var operations = {
+    add: [
+        {name: &quot;Jane&quot;, email: &quot;janedoe@example.com&quot;}
+    ],
+    upsert: [
+        {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+    ],
+    delete: [
+        {id: 1}
+    ]
+}
+m.request({method: &quot;PATCH&quot;, url: &quot;/users/&quot;, data: operations})
+    .then(function(response) {
+        console.log(response)
+        /* notice &quot;John&quot; was deleted
+        [
+            {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;},
+            {id: 3, name: &quot;Jane&quot;, email: &quot;janedoe@example.com&quot;}
+        ]
+        */
+    })
+</code></pre>
+<p>Notice that if we run this example request a second time, it would not add another user called Jane (and it would not attempt to update Mary), because there&#39;s no user with ID = 1 to delete, and therefore the entire set of changes is required to be rejected.</p>
+<hr>
+<h3 id="why-not-just-use-post-everywhere-">Why not just use POST everywhere?</h3>
+<p>One might wonder what is the point of having so many different ways of saving data. What&#39;s wrong with just using POST for everything like we&#39;ve always been doing?</p>
+<p>When your application&#39;s client side code is the only consumer of your web services, you can get away with just doing whatever you want because reinventing the wheel as you go has a lower cognitive load than consulting the HTTP specs all the time. However, when we&#39;re talking about public web services that are usable by other people, it&#39;s important that they can discover what is doable and how. If they need to consult your documentation (assuming you have one!) to figure out whether they should send a request to <code>/getusers/</code> or <code>/users/get</code> or <code>/search?type=user</code>, it causes the same type of cognitive load as it would take you to learn the HTTP spec. Obviously in that situation it&#39;s better for everyone to learn the HTTP spec once, than everyone having to learn the arbitrary vocabularies of every possible web service that they might need.</p>
+<p>More importantly, by learning the HTTP spec, you can become aware of things that your perhaps simplistic application did not think about, and you can fix them to make your code better. One example that is frequently neglected: does your web service have support for saving multiple items at once? (e.g. how would you do the checkboxes in the gmail list?)</p>
+<p>Another reason to understand the spec is to become aware that HTTP verbs don&#39;t translate perfectly into the naive idea of CRUD (create/read/update/delete). With this knowledge, you can understand that autogenerated model layers might limit what you can do by attempting to map the business logic to an over-simplistic view of the world. Hopefully, you&#39;ll also start to understand that a model layer that exposes the transport details to controllers (by merely giving you a class with renamed methods like <code>.update()</code> for <code>POST</code>) isn&#39;t all that helpful to you, especially if said class methods do too much magic and it&#39;s hard to refactor away from them.</p>
+<p>Ultimately, you&#39;ll want to ensure your model layer API expresses your business needs first and foremost, as opposed to trying to conform to some arbitrary programming design pattern for its own sake. The model layer is an abstraction layer: you want its API to be more expressive than just wrapping CRUD with different names. You want to be able to do things that don&#39;t fit a simplified CRUD mold, and you don&#39;t want to reinvent the wheel and relearn all the lessons that the HTTP spec already ironed out years ago. Making that leap takes a little more brain power because it actually forces you to think about good API design, but in the end the effort pays off: you get better separation of concerns and modularity, which translate to shorter, easier to maintain code.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="saving-is-hard.html">Saving is hard</a></li>
+								<li><a href="interview-with-james-long.html">Inteview with James Long</a></li>
+								<li><a href="piggybacking-requests-in-a-widgety-world.html">Piggybacking requests in a widgety world</a></li>
+								<li><a href="an-exercise-in-awesomeness.html">An exercise in awesomeness</a></li>
+								<li><a href="getting-over-a-fear-of-turing-complete-templates.html">Getting over a fear of turing complete templates</a></li>
+								<li><a href="lessons-learned-from-angular.html">Lessons learned from Angular</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>
