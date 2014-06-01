@@ -8,75 +8,107 @@
 			<title>Saving is hard</title>
 			<link>http://lhorie.github.io/mithril-blog/saving-is-hard.html</link>
 			<description><![CDATA[
-<h2 id="interview-with-james-long">Interview with James Long</h2>
-<p>This week I&#39;m trying something different. I&#39;ve been in touch with <a href="https://twitter.com/getgini">Hrishi Mittal</a>, a marketing guy, and he suggested doing interviews with people doing awesome things (particularly with frontend technologies). So we thought a follow-up on the <a href="http://lhorie.github.io/mithril-blog/an-exercise-in-awesomeness.html">article about reducing UI complexity</a> would be interesting.</p>
-<p>Anyways, without further ado.</p>
-<p>James Long is a web developer at Mozilla in the Firefox Developer Tools team. His projects include a fork of LLJS that compiles to asm.js, things built on nunjucks (a templating engine for Javascript) and even an iOS game involving farm animals (<a href="https://github.com/jlongster">https://github.com/jlongster</a> ). He blogs at <a href="http://jlongster.com">http://jlongster.com</a> and tweets at <a href="https://twitter.com/jlongster">https://twitter.com/jlongster</a>.</p>
-<p>In this interview, I talk to James about his work at Mozilla, his personal projects and recent experimentation with MVC frameworks.</p>
-<p><strong>Tell me about yourself and your work at Mozilla</strong></p>
-<p>I&#39;m 29 years old and I work remotely from Virginia for Mozilla. I like
-to keep track of what&#39;s being researched in the academic world (and
-also communities like Clojure) and help bring those ideas to
-JavaScript. My day job for Mozilla is working on the Firefox Developer
-Tools, particularly the debugger. I&#39;m somewhat new to the team and I
-love helping developers debug their code.</p>
-<p><strong>Could you please tell me about the motivation of the &quot;Removing User Interface Complexity&quot; article?</strong></p>
-<p>I&#39;ve been eagerly watching what&#39;s happening with UIs on the web world
-for a while. Web Components has always been confusing to me because
-the practical examples everybody shows don&#39;t actually deliver what
-they promise. Last week I tried to use a Web Component with Ember, but
-there&#39;s no way to bind an element&#39;s event to your controller method in
-a template. This is Web Components fault; they don&#39;t provide the right
-API to make this work yet. Google calls Polymer a library, but to me
-it feels like an awkward framework, and it doesn&#39;t show off the actual
-interesting parts of Web Components: hooking them into different
-existing frameworks.</p>
-<p>Meanwhile, Facebook released React. I didn&#39;t understand it at first,
-but after reading David Nolen&#39;s blog post [1] I instantly got it.
-After using it for a while, I really fell in love with it. It truly is
-a library, letting you use any data structure you want, and it only
-cares about rendering and separating out your UI into components.</p>
-<p>My blog post initially was a rant about Web Components and how
-confusing the messaging (particularly Google&#39;s) is. It didn&#39;t feel
-productive though, so I decided to focus on React and explain what I
-thought was the right way to do UIs in modern apps, and compare it to
-Web Components here and there. I wanted to push Web Components to
-focus on low-level plumbing for sharing components, not a framework.</p>
-<p><strong>You do some pretty cool interactive stuff in that article. Did you start out thinking you&#39;d do all that or did you get the idea while writing it? How long did it take you to write it?</strong></p>
-<p>When I decided to focus on React, I definitely wanted to do something
-cool and interactive. I knew it needed that to fully demonstrate the
-concepts. Writing demos also forced me to stay grounded and not go too
-abstract. I&#39;ve had the idea for that specific layout before when
-writing other posts, but this is the first time trying it. It took
-about 3 weeks off and on to write the whole post, including the
-interactive layout.</p>
-<p><strong>How important do you think client-side MVC frameworks are for mobile?</strong></p>
-<p>They might even be more important for mobile than desktop. Content in
-mobile often takes the shape of an &quot;app&quot;, which has very clear needs
-for something like MVC that handles separate views, how they interact,
-and binding data to the UI. The really good modern libraries &amp;
-frameworks also help keep your app performant by reducing DOM changes.</p>
-<p><strong>You&#39;ve built iOS games too, one of them called Farmageddon which you recently open sourced. How does programming for iOS compare to web programming, personally for you?</strong></p>
-<p>My iOS experience is dated by about 4 years, so a lot has probably
-changed. In general, iOS provides a really good, solid set of
-libraries for making powerful apps, and the web is still catching up
-with these APIs. However, I&#39;d take making UIs on the web over iOS any
-day, where you have to manually manage lots of UIViews and things like
-that. Although HTML/CSS/JS has its quirks, it really is flexible for
-creating UIs.</p>
-<p><strong>What developer tools do you use that you couldn&#39;t live without?</strong></p>
-<p>Honestly, I don&#39;t know what I&#39;d do without git and ssh. ssh is my
-network plumbing, and git is my time traveling device. I know that&#39;s
-low-level, but it&#39;s the first thing that came to mind. Otherwise,
-Emacs is required for writing code and, of course, Firefox Developer
-Tools for debugging it.</p>
-<p><strong>Can you name some programmers who inspire you?</strong></p>
-<p>I&#39;m an old Lisp/Schemer, so many of them come from that world. Many of
-the clojurists inspire me: Rich Hickey, David Nolen, and others.
-Brendan Eich, Dave Herman, Andy Wingo. All of them have had some
-involvement with Scheme. I guess you could say I&#39;m inspired by the
-whole Lisp/Scheme world, haha.</p>
-<p>[1] <a href="http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/">http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/</a></p>
+<h2 id="saving-is-hard">Saving is hard</h2>
+<p>When we first come across the idea of RESTful web services over HTTP, the first thing we usually learn is that, instead of defining a URL like &quot;/getThings/&quot;, the <code>GET</code> method is the way to express that we want to get things from the server, e.g. (<code>GET /thing/</code>). <code>DELETE</code> deletes things, so the rest of the HTTP methods should all be more or less the same deal, right?</p>
+<p>As it turns out, inserting and updating things are kind of complicated: there is the <code>POST</code> method that we&#39;ve all used for both purposes in the past, and then we discover there are also <code>PUT</code> and <code>PATCH</code>.</p>
+<hr>
+<h3 id="post">POST</h3>
+<p>The HTTP spec is a bit of a blabbermouth. Here&#39;s what it says about <code>POST</code>:</p>
+<pre><code>The POST method is used to request that the origin server accept the entity enclosed in the request as a new subordinate of the resource identified by the Request-URI in the Request-Line
+</code></pre><p>What this means is that <code>POST</code> is meant to be used for creating entities as part of something else. Think of that something as an Array, and of <code>POST</code> as of its <code>push</code> method: when we don&#39;t know the index which we are putting our item at, we <code>push()</code> it and get the array index back that we can use to identify our item later. Same with <code>POST</code>: when we don&#39;t know the ID of the entity, we <code>POST</code> to the list so we can find out the ID from the response. Then we can <code>GET</code> the entity by ID later.</p>
+<p>For example, let&#39;s say an app deals with users, which are represented by the URL <code>/users/</code>. We can <code>POST</code> a new user to this URL even if this user entity does not have an ID. The response should tell us an ID that will let us later find it, e.g. <code>GET /users/1</code></p>
+<p>We are <em>not</em> supposed to send a <code>POST /users/1</code> request if we are looking to update the user whose ID is 1</p>
+<pre><code class="lang-javascript">//assuming the list of users is empty
+//create new user in the list of users
+var newUser = {name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+m.request({method: &quot;POST&quot;, url: &quot;/users/&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+    })
+
+//retrive the  user
+m.request({method: &quot;GET&quot;, url: &quot;/users/1&quot;})
+    .then(function(response) {
+        console.log(response) // {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+    })
+
+
+
+//the following is INCORRECT usage of POST
+var newUser = {id: 1, name: &quot;John&quot;, email: &quot;johndoe@example.com&quot;}
+//notice ID in the URL, so this request should return an error
+m.request({method: &quot;POST&quot;, url: &quot;/users/1&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // this should not get called
+    }, function(error) {
+        console.log(error) // &quot;cannot add user as child of itself&quot;
+    })
+</code></pre>
+<hr>
+<h3 id="put">PUT</h3>
+<p>Here&#39;s what the spec says about <code>PUT</code>:</p>
+<pre><code>The PUT method requests that the enclosed entity be stored under the supplied Request-URI. If the Request-URI refers to an already existing resource, the enclosed entity SHOULD be considered as a modified version of the one residing on the origin server. If the Request-URI does not point to an existing resource, and that URI is capable of being defined as a new resource by the requesting user agent, the origin server can create the resource with that URI.
+</code></pre><p>This means <code>PUT</code> is meant to be used to update or insert (aka &quot;upsert&quot;) into whatever is represented by the URL. Again, using the Array analogy, <code>PUT</code> is somewhat like <code>list[i] = value</code>, where <code>i</code> is explicitly in the URL. This operation may overwrite anything that is already there, or it might add a new thing if nothing exists at that index. An important implication is that just like assigning <code>list[i] = value</code> multiple times always results in the same thing, <code>PUT</code> is also not supposed to have side effects.</p>
+<p>For example, we can send a <code>PUT /users/1</code> request to add or update a user whose ID is 1.</p>
+<pre><code class="lang-javascript">//assuming the same list of users as before
+//create new user in the list of users
+var newUser = {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+m.request({method: &quot;PUT&quot;, url: &quot;/users/2&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+    })
+
+//update the user
+m.request({method: &quot;PUT&quot;, url: &quot;/users/2&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+        //notice no data has changed
+    })
+
+//the following is INCORRECT usage of PUT
+var newUser = {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+//notice URL has no ID, so this request should return an error
+m.request({method: &quot;PUT&quot;, url: &quot;/users/&quot;, data: newUser})
+    .then(function(response) {
+        console.log(response) // this should not get called
+    }, function(error) {
+        console.log(error) // &quot;cannot replace list of users&quot;
+    })
+</code></pre>
+<hr>
+<h3 id="patch">PATCH</h3>
+<pre><code>The PATCH method requests that a set of changes described in the request entity be applied to the resource identified by the Request-URI. The set of changes is represented in a format called a &quot;patch document&quot; identified by a media type. If the Request-URI does not point to an existing resource, the server MAY create a new resource, depending on the patch document type (whether it can logically modify a null resource) and permissions, etc.
+</code></pre><p><code>PATCH</code> is an interesting method: it is meant to be used as a mechanism to batch operations. In our Array analogy, it&#39;s similar (but not analogous) to <code>splice</code>. Instead of accepting just data, it accepts a document that contains instructions on what to do with the attached data. It can add, delete and modify items to the list. The spec doesn&#39;t require it to be idempotent (i.e. it can perform irreversible actions, such as deleting items, sending out emails or making a purchase), but it requires that all the operations requested must be done atomically, i.e. either all of them succeed or the entire batch must be rolled back and rejected, no partial updates allowed.</p>
+<pre><code class="lang-javascript">var operations = {
+    add: [
+        {name: &quot;Jane&quot;, email: &quot;janedoe@example.com&quot;}
+    ],
+    upsert: [
+        {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;}
+    ],
+    delete: [
+        {id: 1}
+    ]
+}
+m.request({method: &quot;PATCH&quot;, url: &quot;/users/&quot;, data: operations})
+    .then(function(response) {
+        console.log(response)
+        /* notice &quot;John&quot; was deleted
+        [
+            {id: 2, name: &quot;Mary&quot;, email: &quot;marydoe@example.com&quot;},
+            {id: 3, name: &quot;Jane&quot;, email: &quot;janedoe@example.com&quot;}
+        ]
+        */
+    })
+</code></pre>
+<p>Notice that if we run this example request a second time, it would not add another user called Jane (and it would not attempt to update Mary), because there&#39;s no user with ID = 1 to delete, and therefore the entire set of changes is required to be rejected.</p>
+<hr>
+<h3 id="why-not-just-use-post-everywhere-">Why not just use POST everywhere?</h3>
+<p>One might wonder what is the point of having so many different ways of saving data. What&#39;s wrong with just using POST for everything like we&#39;ve always been doing?</p>
+<p>When your application&#39;s client side code is the only consumer of your web services, you can get away with just doing whatever you want because reinventing the wheel as you go has a lower cognitive load than consulting the HTTP specs all the time. However, when we&#39;re talking about public web services that are usable by other people, it&#39;s important that they can discover what is doable and how. If they need to consult your documentation (assuming you have one!) to figure out whether they should send a request to <code>/getusers/</code> or <code>/users/get</code> or <code>/search?type=user</code>, it causes the same type of cognitive load as it would take you to learn the HTTP spec. Obviously in that situation it&#39;s better for everyone to learn the HTTP spec once, than everyone having to learn the arbitrary vocabularies of every possible web service that they might need.</p>
+<p>More importantly, by learning the HTTP spec, you can become aware of things that your perhaps simplistic application did not think about, and you can fix them to make your code better. One example that is frequently neglected: does your web service have support for saving multiple items at once? (e.g. how would you do the checkboxes in the gmail list?)</p>
+<p>Another reason to understand the spec is to become aware that HTTP verbs don&#39;t translate perfectly into the naive idea of CRUD (create/read/update/delete). With this knowledge, you can understand that autogenerated model layers might limit what you can do by attempting to map the business logic to an over-simplistic view of the world. Hopefully, you&#39;ll also start to understand that a model layer that exposes the transport details to controllers (by merely giving you a class with renamed methods like <code>.update()</code> for <code>POST</code>) isn&#39;t all that helpful to you, especially if said class methods do too much magic and it&#39;s hard to refactor away from them.</p>
+<p>Ultimately, you&#39;ll want to ensure your model layer API expresses your business needs first and foremost, as opposed to trying to conform to some arbitrary programming design pattern for its own sake. The model layer is an abstraction layer: you want its API to be more expressive than just wrapping CRUD with different names. You want to be able to do things that don&#39;t fit a simplified CRUD mold, and you don&#39;t want to reinvent the wheel and relearn all the lessons that the HTTP spec already ironed out years ago. Making that leap takes a little more brain power because it actually forces you to think about good API design, but in the end the effort pays off: you get better separation of concerns and modularity, which translate to shorter, easier to maintain code.</p>
 
 			]]></description>
 		</item>
