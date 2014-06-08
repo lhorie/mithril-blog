@@ -50,7 +50,7 @@ m.module(document, form);
 <p>Note how all the data is neatly tucked in the model layer. In this example, I&#39;m purposely using a pattern that ties the model data very closely to the UI schema - what is known as a <strong>View Model</strong>. From an MVC point of view, a view model is still a part of the model layer because its primary function is to handle data - data that ties closely to the UI structure, but still data.</p>
 <h3 id="the-road-to-hell">The road to hell</h3>
 <p>Here&#39;s a common variation of the example above. It fundamentally misunderstands the intent of the pattern above and puts the model responsibilities directly in the controller:</p>
-<pre><code>var form = {};
+<pre><code class="lang-javascript">var form = {};
 
 //controller
 form.controller = function() {
@@ -72,23 +72,26 @@ form.view = function(ctrl) {
         ctrl.error() || &quot;&quot; // show error if any
     ]);
 };
-</code></pre><p>This pattern is common partly because some frameworks have a very liberal interpretation of MVC which encourages pretty much all logic to live in controllers. There&#39;s also a lot of confusion among developers as to what MVC actually means, and the existence of patterns like MVVM and MVP causes even more confusion.</p>
+</code></pre>
+<p>This pattern is common partly because some frameworks have a very liberal interpretation of MVC which encourages pretty much all logic to live in controllers. There&#39;s also a lot of confusion among developers as to what MVC actually means, and the existence of patterns like MVVM and MVP causes even more confusion.</p>
 <p>The code using the pattern above is shorter, yes, but this is a misleading gain: this code is also more tightly coupled, and therefore harder to scale and maintain down the road.</p>
 <h3 id="increasing-complexity">Increasing complexity</h3>
 <p>Let&#39;s increase the complexity of our example a little bit to see why the shorter code is bad: let&#39;s add a bit of validation.</p>
 <p>Ignoring for a moment that we&#39;d never store an &quot;age&quot; field into the database, we could still validate it to ensure it&#39;s a positive number.</p>
 <p>To add validation in the original example, we change the model method code:</p>
-<pre><code>setData: function(data) {
+<pre><code class="lang-javascript">setData: function(data) {
     return m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: data.name(), age: data.age()}})
         .then(data.saved.bind(this, true), data.error)
 }
-</code></pre><p>To something like this:</p>
-<pre><code>setData: function(data) {
+</code></pre>
+<p>To something like this:</p>
+<pre><code class="lang-javascript">setData: function(data) {
     if (parseInt(data.age()) &lt;= 0) data.error(&quot;Age must be a positive number!&quot;)
     else return m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: data.name(), age: data.age()}})
         .then(data.saved.bind(this, true), data.error)
 }
-</code></pre><p>And there&#39;s the problem with the controller taking the role of the view model. While in the first example, this <code>if</code>/<code>else</code> validation structure is neatly contained in the <code>setData</code> method, in the second example, it ends up being inline in the controller.</p>
+</code></pre>
+<p>And there&#39;s the problem with the controller taking the role of the view model. While in the first example, this <code>if</code>/<code>else</code> validation structure is neatly contained in the <code>setData</code> method, in the second example, it ends up being inline in the controller.</p>
 <p>What that means is that, as the application grows, any time you need to deal with the <code>age</code> of a <code>user</code> entity, you don&#39;t have a single point of contact for validating the age - you end up copying and pasting the validation snippet everywhere (or get potentially invalid data if you forget). And when validation rules change (yes, <em>when</em>, not <em>if</em>), you end up being forced to audit a whole lot more code than if the validation code was contained within a single point of contact in the model layer.</p>
 <p>A clever reader might retort that the view model in our first example is no better, because different parts of the application would likely use different view models, and the duplication of code would still happen.</p>
 <p>This is only true because I wrote the code in a very specific way in order to illustrate how code can evolve over time. The separation of concerns achieved by having a view model entity has another subtle but important purpose: keeping the validation in a <code>setData</code> method that is exclusively about users means that we can be sure there aren&#39;t other implicit dependencies at play via closures and fall-through state in the controller scope. This is an important property for code to have, because it means we can refactor the model layer code more easily to separate the <em>user</em> concern away from the <em>UI view model</em> concern.</p>

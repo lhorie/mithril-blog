@@ -51,7 +51,7 @@ Note how all the data is neatly tucked in the model layer. In this example, I'm 
 
 Here's a common variation of the example above. It fundamentally misunderstands the intent of the pattern above and puts the model responsibilities directly in the controller:
 
-```
+```javascript
 var form = {};
 
 //controller
@@ -88,7 +88,7 @@ Ignoring for a moment that we'd never store an "age" field into the database, we
 
 To add validation in the original example, we change the model method code:
 
-```
+```javascript
 setData: function(data) {
 	return m.request({method: "POST", url: "/user", data: {name: data.name(), age: data.age()}})
 		.then(data.saved.bind(this, true), data.error)
@@ -97,7 +97,7 @@ setData: function(data) {
 
 To something like this:
 
-```
+```javascript
 setData: function(data) {
 	if (parseInt(data.age()) <= 0) data.error("Age must be a positive number!")
 	else return m.request({method: "POST", url: "/user", data: {name: data.name(), age: data.age()}})
