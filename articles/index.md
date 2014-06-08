@@ -1,5 +1,6 @@
 ## Articles
 
+- [Put your controllers on a diet](put-your-controllers-on-a-diet.html) - June 08, 2014
 - [Saving is hard](saving-is-hard.html) - June 01, 2014
 - [Interview with James Long](interview-with-james-long.html) - May 25, 2014
 - [Piggybacking requests in a widgety world](piggybacking-requests-in-a-widgety-world.html) - May 18, 2014
