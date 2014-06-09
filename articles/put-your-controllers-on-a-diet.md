@@ -70,8 +70,8 @@ form.view = function(ctrl) {
 		m("input[placeholder=name]", {oninput: m.withAttr("value", ctrl.data.name)}, ctrl.data.name()),
 		m("input[placeholder=age]", {oninput: m.withAttr("value", ctrl.data.age)}, ctrl.data.age()),
 		m("button", {onclick: ctrl.save}, "Save"),
-		ctrl.saved() ? "Saved!" : "",
-		ctrl.error() || "" // show error if any
+		ctrl.data.saved() ? "Saved!" : "",
+		ctrl.data.error() || "" // show error if any
 	]);
 };
 ```

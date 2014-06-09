@@ -68,8 +68,8 @@ form.view = function(ctrl) {
         m(&quot;input[placeholder=name]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.name)}, ctrl.data.name()),
         m(&quot;input[placeholder=age]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.age)}, ctrl.data.age()),
         m(&quot;button&quot;, {onclick: ctrl.save}, &quot;Save&quot;),
-        ctrl.saved() ? &quot;Saved!&quot; : &quot;&quot;,
-        ctrl.error() || &quot;&quot; // show error if any
+        ctrl.data.saved() ? &quot;Saved!&quot; : &quot;&quot;,
+        ctrl.data.error() || &quot;&quot; // show error if any
     ]);
 };
 </code></pre>
