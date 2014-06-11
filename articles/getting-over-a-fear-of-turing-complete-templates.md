@@ -149,7 +149,7 @@ We can use this technique to create a tiny helper function:
 //helper function
 app.choose = function(key, options) {
 	var option = options[key];
-	return options[0](option[1]);
+	return option[0](option[1]);
 };
 ```
 

@@ -143,7 +143,7 @@ var choice = {
 <pre><code class="lang-javascript">//helper function
 app.choose = function(key, options) {
     var option = options[key];
-    return options[0](option[1]);
+    return option[0](option[1]);
 };
 </code></pre>
 <p>And we can then use this helper function to replace the <code>switch</code> statement:</p>
