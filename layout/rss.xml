@@ -5,10 +5,112 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>The uniform access principle</title>
+			<link>http://lhorie.github.io/mithril-blog/the-uniform-access-principle.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Put your controllers on a diet</title>
 			<link>http://lhorie.github.io/mithril-blog/put-your-controllers-on-a-diet.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="put-your-controllers-on-a-diet">Put your controllers on a diet</h2>
+<p>Many developers have been conditioned by their frameworks to think that the model layer should only hold classes that represent database tables, and that controllers are the correct place to put business logic.</p>
+<p>But as it turns out, in the original MVC paradigm, <a href="http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">business logic is meant to live in the model layer</a>. Controllers are meant to be merely a channel that orchestrates communication between the view and model layers.</p>
+<p>Here&#39;s a contrived example to illustrate:</p>
+<pre><code class="lang-javascript">//model
+var form = {
+    getData: function() {
+        return {name: m.prop(&quot;&quot;), age: m.prop(&quot;&quot;), saved: m.prop(false), error: m.prop(&quot;&quot;)}
+    },
+    setData: function(data) {
+        return m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: data.name(), age: data.age()}})
+            .then(data.saved.bind(this, true), data.error)
+    }
+};
+
+//controller
+form.controller = function() {
+    this.data = form.getData();
+
+    this.save = function() {
+        form.setData(this.data);
+    }.bind(this)
+};
+
+//view
+form.view = function(ctrl) {
+    return m(&quot;form&quot;, [
+        m(&quot;input[placeholder=name]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.name)}, ctrl.data.name()),
+        m(&quot;input[placeholder=age]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.age)}, ctrl.data.age()),
+        m(&quot;button&quot;, {onclick: ctrl.save}, &quot;Save&quot;),
+        ctrl.saved() ? &quot;Saved!&quot; : &quot;&quot;,
+        ctrl.error() || &quot;&quot; // show error if any
+    ]);
+};
+
+m.module(document, form);
+</code></pre>
+<p>Here, the call in the last line <code>m.module(document, form)</code> in the view layer tells the controller that the view needs to be initialized. The controller then tells the model layer to make data available. Once the data is available (which is instantaneous in this case since we&#39;re pulling a blank data structure from memory), Mithril then triggers the rendering of the template.</p>
+<p>In a similar fashion, clicking the button calls the <code>save</code> method in the controller, which in turn calls <code>setData</code> in the model. This time, once the AJAX request completes, the code updates the value of the <code>saved</code> flag in the model, and then Mithril triggers a redraw of the template to display the success message.</p>
+<p>Note how all the data is neatly tucked in the model layer. In this example, I&#39;m purposely using a pattern that ties the model data very closely to the UI schema - what is known as a <strong>View Model</strong>. From an MVC point of view, a view model is still a part of the model layer because its primary function is to handle data - data that ties closely to the UI structure, but still data.</p>
+<h3 id="the-road-to-hell">The road to hell</h3>
+<p>Here&#39;s a common variation of the example above. It fundamentally misunderstands the intent of the pattern above and puts the model responsibilities directly in the controller:</p>
+<pre><code class="lang-javascript">var form = {};
+
+//controller
+form.controller = function() {
+    this.data = {name: m.prop(&quot;&quot;), age: m.prop(&quot;&quot;), saved: m.prop(false), error: m.prop(&quot;&quot;)}
+
+    this.save = function() {
+        m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: this.data.name(), age: this.data.age()}})
+            .then(this.data.saved.bind(this, true), this.data.error)
+    }.bind(this)
+};
+
+//view
+form.view = function(ctrl) {
+    return m(&quot;form&quot;, [
+        m(&quot;input[placeholder=name]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.name)}, ctrl.data.name()),
+        m(&quot;input[placeholder=age]&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.data.age)}, ctrl.data.age()),
+        m(&quot;button&quot;, {onclick: ctrl.save}, &quot;Save&quot;),
+        ctrl.data.saved() ? &quot;Saved!&quot; : &quot;&quot;,
+        ctrl.data.error() || &quot;&quot; // show error if any
+    ]);
+};
+</code></pre>
+<p>This pattern is common partly because some frameworks have a very liberal interpretation of MVC which encourages pretty much all logic to live in controllers. There&#39;s also a lot of confusion among developers as to what MVC actually means, and the existence of patterns like MVVM and MVP causes even more confusion.</p>
+<p>The code using the pattern above is shorter, yes, but this is a misleading gain: this code is also more tightly coupled, and therefore harder to scale and maintain down the road.</p>
+<h3 id="increasing-complexity">Increasing complexity</h3>
+<p>Let&#39;s increase the complexity of our example a little bit to see why the shorter code is bad: let&#39;s add a bit of validation.</p>
+<p>Ignoring for a moment that we&#39;d never store an &quot;age&quot; field into the database, we could still validate it to ensure it&#39;s a positive number.</p>
+<p>To add validation in the original example, we change the model method code:</p>
+<pre><code class="lang-javascript">setData: function(data) {
+    return m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: data.name(), age: data.age()}})
+        .then(data.saved.bind(this, true), data.error)
+}
+</code></pre>
+<p>To something like this:</p>
+<pre><code class="lang-javascript">setData: function(data) {
+    if (parseInt(data.age()) &lt;= 0) data.error(&quot;Age must be a positive number!&quot;)
+    else return m.request({method: &quot;POST&quot;, url: &quot;/user&quot;, data: {name: data.name(), age: data.age()}})
+        .then(data.saved.bind(this, true), data.error)
+}
+</code></pre>
+<p>And there&#39;s the problem with the controller taking the role of the view model. While in the first example, this <code>if</code>/<code>else</code> validation structure is neatly contained in the <code>setData</code> method, in the second example, it ends up being inline in the controller.</p>
+<p>What that means is that, as the application grows, any time you need to deal with the <code>age</code> of a <code>user</code> entity, you don&#39;t have a single point of contact for validating the age - you end up copying and pasting the validation snippet everywhere (or get potentially invalid data if you forget). And when validation rules change (yes, <em>when</em>, not <em>if</em>), you end up being forced to audit a whole lot more code than if the validation code was contained within a single point of contact in the model layer.</p>
+<p>A clever reader might retort that the view model in our first example is no better, because different parts of the application would likely use different view models, and the duplication of code would still happen.</p>
+<p>This is only true because I wrote the code in a very specific way in order to illustrate how code can evolve over time. The separation of concerns achieved by having a view model entity has another subtle but important purpose: keeping the validation in a <code>setData</code> method that is exclusively about users means that we can be sure there aren&#39;t other implicit dependencies at play via closures and fall-through state in the controller scope. This is an important property for code to have, because it means we can refactor the model layer code more easily to separate the <em>user</em> concern away from the <em>UI view model</em> concern.</p>
+<p>In a real life application, we might get a change request to add a section to the form about a completely unrelated thing, or maybe a request to redirect the user to another page automatically after saving successfully. The code to handle this orchestration might involve touching several view models and might issue commands to the framework to handle the redirects. If numerous view models - validation code and all - get mixed with orchestration code in a big monolithic controller function, they just become extra mental baggage that slows down our refactoring efforts (or prevents it altogether).</p>
+<p>Having the code already semi-refactored in a view model entity, we can then apply the OOP stuff we learned in school: instead of calling a naked <code>m.request</code> for a user directly from the form view model entity (which sounds like an obviously dumb idea as soon as we say it out loud), we can create a self-contained <code>User</code> class and use it in the view model entity to manage user state and validation, without getting bogged down by the controller&#39;s redirect logic and other unrelated stuff.</p>
+<p>In other words, the first example is closer to an ideal codebase than the second, and therefore takes less effort to refactor, and is less likely to end up in code rot.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>It&#39;s very rare that we&#39;ll write perfect code on our first try, especially with tricky business logic taking most of our mental power (and the looming deadlines filling the rest of our brains with stress), but it&#39;s very common that we&#39;ll have to maintain the resulting code through rounds and rounds of maintenance and changes. It&#39;s very important to have a solid understanding of what logic is tied closely to what data, so we can achieve DRYness and separation of concerns more effectively, rather than slicing the code in the wrong dimensions and then hitting a wall of code rot a few months down the road.</p>
+<p>Moving state machines out of controllers is a good start. Acknowledging that the model can have both business data and UI state data (and that the two are separate things) is another step in the right direction.</p>
+<p>However, we should always be mindful that these are techniques to achieve a goal, NOT dogmatic golden rules: blindly separating everything into small boxes doesn&#39;t automatically makes code good, and in fact can be detrimental if we separate things that are actually meant to be together. This is precisely the misunderstanding that yields well-intentioned but problematic code with self-contained model classes, and self-contained controllers holding validation code for said classes.</p>
+<p>Separation of concerns isn&#39;t itself an end goal. Keeping our code refactorable as it grows in complexity is what we really want to achieve.</p>
+
 			]]></description>
 		</item>
 		<item>

@@ -1,5 +1,6 @@
 ## Articles
 
+- [The uniform access principle](the-uniform-access-principle.html) - June 15, 2014
 - [Put your controllers on a diet](put-your-controllers-on-a-diet.html) - June 08, 2014
 - [Saving is hard](saving-is-hard.html) - June 01, 2014
 - [Interview with James Long](interview-with-james-long.html) - May 25, 2014

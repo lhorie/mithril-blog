@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/put-your-controllers-on-a-diet.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/the-uniform-access-principle.md"], dest: "feed.xml"}]
 			}
 		}
 	});
