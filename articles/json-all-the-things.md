@@ -126,7 +126,7 @@ console.log(JSON.stringify(john));
 
 ### Last thoughts
 
-The JSON API's ability to process anything that has a `toJSON` method is very handy is supporting holistic UAP-enabled classes.
+The JSON API's ability to process anything that has a `toJSON` method is very handy in supporting holistic UAP-enabled classes.
 
 If you are familiar with statically typed OOP languages like Java or C#, you'll probably notice that the pattern of adding specific methods to make an object consumable by other APIs is essentially the same thing as implementing Interfaces (but without verbosity). Here's how you would express the JSON-serializable interface in Typescript:
 

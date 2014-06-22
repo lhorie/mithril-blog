@@ -94,7 +94,7 @@ console.log(JSON.stringify(john));
 //logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;, &quot;name&quot;: &quot;John Doe&quot;}&#39;
 </code></pre>
 <h3 id="last-thoughts">Last thoughts</h3>
-<p>The JSON API&#39;s ability to process anything that has a <code>toJSON</code> method is very handy is supporting holistic UAP-enabled classes.</p>
+<p>The JSON API&#39;s ability to process anything that has a <code>toJSON</code> method is very handy in supporting holistic UAP-enabled classes.</p>
 <p>If you are familiar with statically typed OOP languages like Java or C#, you&#39;ll probably notice that the pattern of adding specific methods to make an object consumable by other APIs is essentially the same thing as implementing Interfaces (but without verbosity). Here&#39;s how you would express the JSON-serializable interface in Typescript:</p>
 <pre><code>interface JSONSerializable {
     toJSON(data:any): any
