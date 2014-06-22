@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="json-all-the-things">JSON all the things</h2>
+<p><em>June 22, 2014</em></p>
+<p>In <a href="the-uniform-access-principle.html">an earlier article</a>, we saw how we can use getter/setter functions to achieve the <a href="http://en.wikipedia.org/wiki/Uniform_access_principle">Uniform Access Principle</a>, and have data from our web services automatically map to our model entity classes.</p>
+<p>This article will show you how to go the other way around: posting instances of our model classes <em>into</em> a JSON-based web service.</p>
+<p>Consider this very simple class:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.name = m.prop(options.name);
+};
+
+var john = new User({name: &quot;John Doe&quot;});
+console.log(john.name()); //logs &quot;John Doe&quot;
+</code></pre>
+<p>Normally, if we need to post data to a web service, frameworks will take care of running <code>JSON.stringify</code> on the Javascript object that we pass to an AJAX call. A clever reader might point out that classes w/ getter/setter methods are therefore inherently hard to serialize: After all, a getter/setter function is, well, a function, and functions cannot be serialized into JSON strings.</p>
+<h3 id="or-can-they-">Or can they?</h3>
+<p>If you try running the code below, it actually does what we want!</p>
+<pre><code class="lang-javascript">console.log(JSON.stringify(john));
+//logs &#39;{&quot;name&quot;: &quot;John Doe&quot;}&#39;
+</code></pre>
+<p>As it turns out, the Javascript JSON API has an extremely handy hook that is not very well known: Anything that has a <code>toJSON</code> method attached will have that method called internally by <code>JSON.stringify</code>. The example below shows how we can make a function JSON-serializable:</p>
+<pre><code class="lang-javascript">var greeter = function() {
+    return &quot;hello&quot;;
+}
+greeter.toJSON = greeter;
+
+console.log(JSON.stringify(greeter));
+//logs &quot;hello&quot;
+</code></pre>
+<p>Mithril&#39;s <code>m.prop</code> automatically hooks up this feature for its getters/setters, so we can easily convert POJO-based classes into UAP-enabled ones without surprises. </p>
+<p>In other words, if you have a class defined this way:</p>
+<pre><code class="lang-javascript">//class definition
+function User(options.name) {
+    this.name = options.name;
+};
+
+//using the class
+m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
+</code></pre>
+<p>You can simply change the class implementation to use a getter/setter:</p>
+<pre><code>//class definition
+function User(options) {
+    this.name = m.prop(options.name);
+};
+
+//using the class
+m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
+</code></pre><p>And there&#39;s no need to make any changes in the <code>m.request</code> call. It just works.</p>
+<h3 id="advanced-serialization">Advanced serialization</h3>
+<p>Recall that one of the reasons we&#39;re using <code>m.prop</code> getter/setter methods is so that we can eventually <em>replace</em> <code>m.prop</code> with a custom computation if ever needed.</p>
+<p>The Uniform Access Principle is great at hiding the implementation details of the getter/setter, but it&#39;s a double-edged sword: it also hides the complexity of the computation. <code>m.prop</code> can always auto-serialize its value because it doesn&#39;t incur any computational cost (since it&#39;s simply storing and retriving a value from a variable internally). But as soon as you need to start doing custom computations, you need to also have control over its serialization options.</p>
+<p>Let&#39;s suppose that our <code>User</code> class now needs to work with a web service that works with this data structure:</p>
+<pre><code class="lang-javascript">{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;}
+</code></pre>
+<p>A re-implementation of the class might look like this:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.firstName = m.prop(options.firstName);
+    this.lastName = m.prop(options.lastName);
+
+    this.name = function() {
+        return this.firstName() + this.lastName();
+    };
+}
+</code></pre>
+<p>Our application might still be using the <code>name</code> method as a convenience method, but because of the schema change that propagated from the server, we&#39;d definitely not want to serialize <code>name</code> into a JSON string. We want to post only <code>firstName</code> and <code>lastName</code>. And indeed, stringifying an instance of this new class yields the same data structure that we used to construct it:</p>
+<pre><code>var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
+
+console.log(JSON.stringify(john));
+//logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;}&#39;
+</code></pre><p>So, as you can see, classes that mix <code>m.prop</code> getter-setters with custom computed properties can be used both to convert web service data into javascript class instances and to convert these instances back to data that the web services can consume.</p>
+<p>As an aside, if we did want to serialize a computed property for whatever reason, it&#39;s possible to do so by just using the JSON API hook we saw earlier:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.firstName = m.prop(options.firstName);
+    this.lastName = m.prop(options.lastName);
+
+    this.name = function() {
+        return this.firstName() + this.lastName()
+    };
+
+    //make `name` serializable
+    this.name.toJSON = this.name;
+};
+
+var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
+console.log(JSON.stringify(john));
+//logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;, &quot;name&quot;: &quot;John Doe&quot;}&#39;
+</code></pre>
+<h3 id="last-thoughts">Last thoughts</h3>
+<p>The JSON API&#39;s ability to process anything that has a <code>toJSON</code> method is very handy is supporting holistic UAP-enabled classes.</p>
+<p>If you are familiar with statically typed OOP languages like Java or C#, you&#39;ll probably notice that the pattern of adding specific methods to make an object consumable by other APIs is essentially the same thing as implementing Interfaces (but without verbosity). Here&#39;s how you would express the JSON-serializable interface in Typescript:</p>
+<pre><code>interface JSONSerializable {
+    toJSON(data:any): any
+}
+</code></pre><p>Javascript itself, however, is dynamically typed, so this interface does not necessarily exist as code anywhere - it literally takes <em>zero lines-of-code</em> to write its signature, simply because the runtime won&#39;t complain if it&#39;s not defined. But it&#39;s important to understand what it is conceptually, especially if you start using this technique to create your own interface consumers, so that you can then document your features effectively, instead of having them look like undocumented voodoo magic.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="json-all-the-things.html">JSON all the things</a></li>
+								<li><a href="the-uniform-access-principle.html">The uniform access principle</a></li>
+								<li><a href="put-your-controllers-on-a-diet.html">Put your controllers on a diet</a></li>
+								<li><a href="saving-is-hard.html">Saving is hard</a></li>
+								<li><a href="interview-with-james-long.html">Inteview with James Long</a></li>
+								<li><a href="piggybacking-requests-in-a-widgety-world.html">Piggybacking requests in a widgety world</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

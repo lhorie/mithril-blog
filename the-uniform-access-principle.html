@@ -90,14 +90,15 @@ console.log(john.age()); //same API as before
 <pre><code class="lang-javascript">var users = m.request({method: &quot;GET&quot;, url: &quot;/api/users/&quot;, type: User});
 </code></pre>
 <p>Notice that we&#39;re passing <code>User</code> as a <code>type</code> option into <code>m.request</code>. This passes the data items from the web service as an argument to the User class, so that when the AJAX response above resolves successfully, the <code>users</code> getter/setter function will contain a list of User class instances. Assuming the web service returned a list of objects with <code>name</code> and <code>birthdayYear</code> fields, we could then access the properties of the User class instances in the view using getter/setter syntax:</p>
-<pre><code>users().map(function(user) {
+<pre><code class="lang-javascript">users().map(function(user) {
     //notice `user` is an instance of our `User` class
     return [
         m(&quot;div&quot;, &quot;name:&quot; + user.name())
         m(&quot;div&quot;, &quot;age:&quot; + user.age())
     ];
 })
-</code></pre><p>And, of course, as we saw earlier, modifying the internal implementation of the User class requires no major refactoring of the rest of our code.</p>
+</code></pre>
+<p>And, of course, as we saw earlier, modifying the internal implementation of the User class requires no major refactoring of the rest of our code.</p>
 <p>In short, by simply structuring our plain vanilla Javascript classes using best practices and using <code>m.prop</code> (or any getter/setter function), we can also get the benefits of UAP for better separation of concerns and refactorability.</p>
 
 							
@@ -121,6 +122,7 @@ console.log(john.age()); //same API as before
 						<div class="col(3,3,12)">
 							<h4>Latest Articles</h4>
 							<ul>
+								<li><a href="json-all-the-things.html">JSON all the things</a></li>
 								<li><a href="the-uniform-access-principle.html">The uniform access principle</a></li>
 								<li><a href="put-your-controllers-on-a-diet.html">Put your controllers on a diet</a></li>
 								<li><a href="saving-is-hard.html">Saving is hard</a></li>

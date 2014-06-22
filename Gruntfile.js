@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/the-uniform-access-principle.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/json-all-the-things.md"], dest: "feed.xml"}]
 			}
 		}
 	});

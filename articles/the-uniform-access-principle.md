@@ -102,7 +102,7 @@ var users = m.request({method: "GET", url: "/api/users/", type: User});
 
 Notice that we're passing `User` as a `type` option into `m.request`. This passes the data items from the web service as an argument to the User class, so that when the AJAX response above resolves successfully, the `users` getter/setter function will contain a list of User class instances. Assuming the web service returned a list of objects with `name` and `birthdayYear` fields, we could then access the properties of the User class instances in the view using getter/setter syntax:
 
-```
+```javascript
 users().map(function(user) {
 	//notice `user` is an instance of our `User` class
 	return [

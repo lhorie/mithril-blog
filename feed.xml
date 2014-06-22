@@ -5,6 +5,105 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>JSON all the things</title>
+			<link>http://lhorie.github.io/mithril-blog/json-all-the-things.html</link>
+			<description><![CDATA[
+<h2 id="json-all-the-things">JSON all the things</h2>
+<p><em>June 22, 2014</em></p>
+<p>In <a href="the-uniform-access-principle.html">an earlier article</a>, we saw how we can use getter/setter functions to achieve the <a href="http://en.wikipedia.org/wiki/Uniform_access_principle">Uniform Access Principle</a>, and have data from our web services automatically map to our model entity classes.</p>
+<p>This article will show you how to go the other way around: posting instances of our model classes <em>into</em> a JSON-based web service.</p>
+<p>Consider this very simple class:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.name = m.prop(options.name);
+};
+
+var john = new User({name: &quot;John Doe&quot;});
+console.log(john.name()); //logs &quot;John Doe&quot;
+</code></pre>
+<p>Normally, if we need to post data to a web service, frameworks will take care of running <code>JSON.stringify</code> on the Javascript object that we pass to an AJAX call. A clever reader might point out that classes w/ getter/setter methods are therefore inherently hard to serialize: After all, a getter/setter function is, well, a function, and functions cannot be serialized into JSON strings.</p>
+<h3 id="or-can-they-">Or can they?</h3>
+<p>If you try running the code below, it actually does what we want!</p>
+<pre><code class="lang-javascript">console.log(JSON.stringify(john));
+//logs &#39;{&quot;name&quot;: &quot;John Doe&quot;}&#39;
+</code></pre>
+<p>As it turns out, the Javascript JSON API has an extremely handy hook that is not very well known: Anything that has a <code>toJSON</code> method attached will have that method called internally by <code>JSON.stringify</code>. The example below shows how we can make a function JSON-serializable:</p>
+<pre><code class="lang-javascript">var greeter = function() {
+    return &quot;hello&quot;;
+}
+greeter.toJSON = greeter;
+
+console.log(JSON.stringify(greeter));
+//logs &quot;hello&quot;
+</code></pre>
+<p>Mithril&#39;s <code>m.prop</code> automatically hooks up this feature for its getters/setters, so we can easily convert POJO-based classes into UAP-enabled ones without surprises. </p>
+<p>In other words, if you have a class defined this way:</p>
+<pre><code class="lang-javascript">//class definition
+function User(options.name) {
+    this.name = options.name;
+};
+
+//using the class
+m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
+</code></pre>
+<p>You can simply change the class implementation to use a getter/setter:</p>
+<pre><code>//class definition
+function User(options) {
+    this.name = m.prop(options.name);
+};
+
+//using the class
+m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
+</code></pre><p>And there&#39;s no need to make any changes in the <code>m.request</code> call. It just works.</p>
+<h3 id="advanced-serialization">Advanced serialization</h3>
+<p>Recall that one of the reasons we&#39;re using <code>m.prop</code> getter/setter methods is so that we can eventually <em>replace</em> <code>m.prop</code> with a custom computation if ever needed.</p>
+<p>The Uniform Access Principle is great at hiding the implementation details of the getter/setter, but it&#39;s a double-edged sword: it also hides the complexity of the computation. <code>m.prop</code> can always auto-serialize its value because it doesn&#39;t incur any computational cost (since it&#39;s simply storing and retriving a value from a variable internally). But as soon as you need to start doing custom computations, you need to also have control over its serialization options.</p>
+<p>Let&#39;s suppose that our <code>User</code> class now needs to work with a web service that works with this data structure:</p>
+<pre><code class="lang-javascript">{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;}
+</code></pre>
+<p>A re-implementation of the class might look like this:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.firstName = m.prop(options.firstName);
+    this.lastName = m.prop(options.lastName);
+
+    this.name = function() {
+        return this.firstName() + this.lastName();
+    };
+}
+</code></pre>
+<p>Our application might still be using the <code>name</code> method as a convenience method, but because of the schema change that propagated from the server, we&#39;d definitely not want to serialize <code>name</code> into a JSON string. We want to post only <code>firstName</code> and <code>lastName</code>. And indeed, stringifying an instance of this new class yields the same data structure that we used to construct it:</p>
+<pre><code>var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
+
+console.log(JSON.stringify(john));
+//logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;}&#39;
+</code></pre><p>So, as you can see, classes that mix <code>m.prop</code> getter-setters with custom computed properties can be used both to convert web service data into javascript class instances and to convert these instances back to data that the web services can consume.</p>
+<p>As an aside, if we did want to serialize a computed property for whatever reason, it&#39;s possible to do so by just using the JSON API hook we saw earlier:</p>
+<pre><code class="lang-javascript">function User(options) {
+    this.firstName = m.prop(options.firstName);
+    this.lastName = m.prop(options.lastName);
+
+    this.name = function() {
+        return this.firstName() + this.lastName()
+    };
+
+    //make `name` serializable
+    this.name.toJSON = this.name;
+};
+
+var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
+console.log(JSON.stringify(john));
+//logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;, &quot;name&quot;: &quot;John Doe&quot;}&#39;
+</code></pre>
+<h3 id="last-thoughts">Last thoughts</h3>
+<p>The JSON API&#39;s ability to process anything that has a <code>toJSON</code> method is very handy is supporting holistic UAP-enabled classes.</p>
+<p>If you are familiar with statically typed OOP languages like Java or C#, you&#39;ll probably notice that the pattern of adding specific methods to make an object consumable by other APIs is essentially the same thing as implementing Interfaces (but without verbosity). Here&#39;s how you would express the JSON-serializable interface in Typescript:</p>
+<pre><code>interface JSONSerializable {
+    toJSON(data:any): any
+}
+</code></pre><p>Javascript itself, however, is dynamically typed, so this interface does not necessarily exist as code anywhere - it literally takes <em>zero lines-of-code</em> to write its signature, simply because the runtime won&#39;t complain if it&#39;s not defined. But it&#39;s important to understand what it is conceptually, especially if you start using this technique to create your own interface consumers, so that you can then document your features effectively, instead of having them look like undocumented voodoo magic.</p>
+
+			]]></description>
+		</item>
+		<item>
 			<title>The uniform access principle</title>
 			<link>http://lhorie.github.io/mithril-blog/the-uniform-access-principle.html</link>
 			<description><![CDATA[
