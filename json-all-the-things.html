@@ -49,7 +49,7 @@ console.log(JSON.stringify(greeter));
 <p>Mithril&#39;s <code>m.prop</code> automatically hooks up this feature for its getters/setters, so we can easily convert POJO-based classes into UAP-enabled ones without surprises. </p>
 <p>In other words, if you have a class defined this way:</p>
 <pre><code class="lang-javascript">//class definition
-function User(options.name) {
+function User(options) {
     this.name = options.name;
 };
 
@@ -57,14 +57,15 @@ function User(options.name) {
 m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
 </code></pre>
 <p>You can simply change the class implementation to use a getter/setter:</p>
-<pre><code>//class definition
+<pre><code class="lang-javascript">//class definition
 function User(options) {
     this.name = m.prop(options.name);
 };
 
 //using the class
 m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User({name: &quot;John Doe&quot;})});
-</code></pre><p>And there&#39;s no need to make any changes in the <code>m.request</code> call. It just works.</p>
+</code></pre>
+<p>And there&#39;s no need to make any changes in the <code>m.request</code> call. It just works.</p>
 <h3 id="advanced-serialization">Advanced serialization</h3>
 <p>Recall that one of the reasons we&#39;re using <code>m.prop</code> getter/setter methods is so that we can eventually <em>replace</em> <code>m.prop</code> with a custom computation if ever needed.</p>
 <p>The Uniform Access Principle is great at hiding the implementation details of the getter/setter, but it&#39;s a double-edged sword: it also hides the complexity of the computation. <code>m.prop</code> can always auto-serialize its value because it doesn&#39;t incur any computational cost (since it&#39;s simply storing and retriving a value from a variable internally). But as soon as you need to start doing custom computations, you need to also have control over its serialization options.</p>
@@ -82,11 +83,12 @@ m.request({method: &quot;POST&quot;, url: &quot;/api/users&quot;, data: new User
 }
 </code></pre>
 <p>Our application might still be using the <code>name</code> method as a convenience method, but because of the schema change that propagated from the server, we&#39;d definitely not want to serialize <code>name</code> into a JSON string. We want to post only <code>firstName</code> and <code>lastName</code>. And indeed, stringifying an instance of this new class yields the same data structure that we used to construct it:</p>
-<pre><code>var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
+<pre><code class="lang-javascript">var john = new User({firstName: &quot;John&quot;, lastName: &quot;Doe&quot;});
 
 console.log(JSON.stringify(john));
 //logs &#39;{&quot;firstName&quot;: &quot;John&quot;, &quot;lastName&quot;: &quot;Doe&quot;}&#39;
-</code></pre><p>So, as you can see, classes that mix <code>m.prop</code> getter-setters with custom computed properties can be used both to convert web service data into javascript class instances and to convert these instances back to data that the web services can consume.</p>
+</code></pre>
+<p>So, as you can see, classes that mix <code>m.prop</code> getter-setters with custom computed properties can be used both to convert web service data into javascript class instances and to convert these instances back to data that the web services can consume.</p>
 <p>As an aside, if we did want to serialize a computed property for whatever reason, it&#39;s possible to do so by just using the JSON API hook we saw earlier:</p>
 <pre><code class="lang-javascript">function User(options) {
     this.firstName = m.prop(options.firstName);

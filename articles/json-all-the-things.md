@@ -46,7 +46,7 @@ In other words, if you have a class defined this way:
 
 ```javascript
 //class definition
-function User(options.name) {
+function User(options) {
 	this.name = options.name;
 };
 
@@ -56,7 +56,7 @@ m.request({method: "POST", url: "/api/users", data: new User({name: "John Doe"})
 
 You can simply change the class implementation to use a getter/setter:
 
-```
+```javascript
 //class definition
 function User(options) {
 	this.name = m.prop(options.name);
@@ -95,7 +95,7 @@ function User(options) {
 
 Our application might still be using the `name` method as a convenience method, but because of the schema change that propagated from the server, we'd definitely not want to serialize `name` into a JSON string. We want to post only `firstName` and `lastName`. And indeed, stringifying an instance of this new class yields the same data structure that we used to construct it:
 
-```
+```javascript
 var john = new User({firstName: "John", lastName: "Doe"});
 
 console.log(JSON.stringify(john));
