@@ -5,6 +5,132 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>When CSS lets you down</title>
+			<link>http://lhorie.github.io/mithril-blog/when-css-lets-you-down.html</link>
+			<description><![CDATA[
+<h2 id="when-css-lets-you-down">When CSS lets you down</h2>
+<p>Componentization is a framework&#39;s ability to split the UI into pieces that are modular and reusable. So it&#39;s no wonder that many people are working hard in creating systems for providing this ability to developers: the Web Component spec, and the newest alpha releases of Knockout.js are good examples.</p>
+<p>Speaking from my experience, I think there&#39;s one fundamental problem with the way componentization is commonly done: and it can be summarized in one word - CSS.</p>
+<p>Component systems are great at encapsulating functionality, but the downside is that we also lose the ability to look into them and modify them - Web Component proponents often say that we can style shadow DOMs with CSS, but those with experience trying to customize the design of jQuery-UI or Ext.js widgets (and by customize I mean change their layouts to the specs of a 3rd party graphics designer, not merely change colors and trivial CSS rules) knows that certain things are extremely hard (or even downright impossible) to do. Things like vertical alignment and arbitrary ordering of elements are poorly supported by CSS, and the presence of non-editable javascript-generated inline styles, for example, further complicates matters.</p>
+<p>Unfortunately, despite the promise of separation of content and styles that CSS was meant to solve, the reality is that some design aspects still require us to modify HTML. And the systems that encapsulate markup in order to provide modularity forget that too often.</p>
+<p>Mithril templates, being simply pure functions that return plain javascript data structures, can be piped to <strong>transformer functions</strong>, which allows the developer to maintain control over their component&#39;s markup and styles with a deep level of granularity.</p>
+<p>Here&#39;s a simple example to demonstrate. Imagine we need to display some tabular data. Our template would likely look something like this.</p>
+<pre><code class="lang-javascript">//a simple template
+function table(ctrl) {
+    return m(&quot;table&quot;, [
+        m(&quot;tr&quot;, [
+            m(&quot;th&quot;, &quot;Project&quot;),
+            m(&quot;th&quot;, &quot;Budget&quot;),
+            m(&quot;th&quot;, &quot;Actuals&quot;)
+        ]),
+        m(&quot;tr&quot;, [
+            ctrl.data.map(function(item) {
+                return [
+                    m(&quot;td&quot;, item.name),
+                    m(&quot;td&quot;, item.budget),
+                    m(&quot;td&quot;, item.actuals)
+                ]
+            })
+        ])
+    ]);
+};
+</code></pre>
+<p>The code above is simply a table that loops through a list of data and renders a row for each item in the list. It would render something like this:</p>
+<pre><code class="lang-markup">&lt;table&gt;
+    &lt;tr&gt;
+        &lt;th&gt;Project&lt;/th&gt;
+        &lt;th&gt;Budget&lt;/th&gt;
+        &lt;th&gt;Actuals&lt;/th&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Bike Ad Campaign&lt;/td&gt;
+        &lt;td&gt;$100,000&lt;/td&gt;
+        &lt;td&gt;$97,000&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Cart Ad Campaign&lt;/td&gt;
+        &lt;td&gt;$80,000&lt;/td&gt;
+        &lt;td&gt;$82,000&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+</code></pre>
+<p>If we needed to style our table with, say, Bootstrap, we&#39;d manually add a CSS class to it. But if the table needed to be sortable or have some other not-so-trivial functionality and we chose to use a 3rd party component, we either need to search the Googles for a component that already uses Bootstrap, or spend way too much time re-styling a component&#39;s built-in style ourselves.</p>
+<p>With a transformer function, we can programmatically inject the CSS classes that we need into our template. Mithril&#39;s <code>m</code> utility returns a <em>virtual element</em> object that looks like this:</p>
+<pre><code class="lang-javascript">{tag: &quot;div&quot;, attrs: {class: &quot;foo&quot;}, children: [ /* child objects */ ]}
+</code></pre>
+<p>Knowing that, we can create a function that takes the tree of virtual elements from our <code>table</code> function as a parameter, and transform it using plain javascript:</p>
+<pre><code class="lang-javascript">//transformer function: simply add the `table` CSS classes to the table
+function styleTable(table) {
+    table.attrs.class = &quot;table table-striped&quot;;
+    return table;
+};
+
+//pipe our table template
+styleTable(table(ctrl));
+</code></pre>
+<p>Then our rendered template would have bootstrap classes attached:</p>
+<pre><code class="lang-markup">&lt;table class=&quot;table table-striped&quot;&gt;
+    &lt;tr&gt;
+        &lt;th&gt;Project&lt;/th&gt;
+        &lt;th&gt;Budget&lt;/th&gt;
+        &lt;th&gt;Actuals&lt;/th&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Bike Ad Campaign&lt;/td&gt;
+        &lt;td&gt;$100,000&lt;/td&gt;
+        &lt;td&gt;$97,000&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Cart Ad Campaign&lt;/td&gt;
+        &lt;td&gt;$80,000&lt;/td&gt;
+        &lt;td&gt;$82,000&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+</code></pre>
+<p>With this technique in hand, a component author no longer needs to hard-code the CSS classes of their components into their templates, and developers that use those components can roll their own transformers as well.</p>
+<p>Transformer functions aren&#39;t limited to simply adding classes to particular elements. We can even modify the tree structure of a template, so we can do things like control the ordering of DOM elements and add helper spans to apply CSS position or overflow, when needed.</p>
+<p>We can modify the virtual element tree structure with confidence because, unlike with jQuery code, we have the data model decoupled from the DOM tree, and no runtime DOM traversal happening, so we don&#39;t need to worry about components&#39; internal DOM traversal code breaking after we change the DOM tree.</p>
+<h3 id="advanced-transformers">Advanced transformers</h3>
+<p>A clever reader might realize that writing transformer functions for non-trivial templates can be brittle if we naively use dot notation to traverse down the virtual element tree. But because templates are just javascript data structures, we can get around this issue using techniques like <strong>recursive pattern matching</strong></p>
+<p>Javascript unfortunately doesn&#39;t have built-in syntax for compile-time pattern matching in the way that languages like Haskell do, but it&#39;s perfectly possible to do runtime pattern matching using procedural code. Here&#39;s a simple example:</p>
+<pre><code class="lang-javascript">function styleTable(root) {
+    if (root.tag == &quot;table&quot;) {
+        root.attrs.class = &quot;table table-stripe&quot;;
+    }
+    return root;
+};
+</code></pre>
+<p>This is the same function we used earlier, but this one can receive any template and only modifies it if the root element in the template is a table.</p>
+<p><em>Recursive</em> pattern matching is achieved by creating a function that recursively calls itself to drill down a template tree, and then run some arbitrary computation if a virtual element matches some criteria. The beauty of this technique is that it makes a transformer function agnostic about the structure of the template: all that matters is that an element matches some criteria in order for it to be transformed.</p>
+<p>Here&#39;s a contrived example:</p>
+<pre><code class="lang-javascript">function highlightNegatives(root, parent) {
+    if (!root) return root;
+    else if (root instanceof Array) {
+        for (var i = 0; i &lt; root.length; i++) {
+            highlightNegatives(root[i], parent);
+        }
+    }
+    else if (root.children) {
+        highlightNegatives(root.children, root);
+    }
+    else if (typeof child == &quot;string&quot; &amp;&amp; child.indexOf(&quot;($&quot;) === 0) {
+        parent.attrs.class = &quot;text-danger&quot;;
+    }
+    return root;
+};
+
+highlightNegatives(styleTable(table(ctrl)));
+</code></pre>
+<p>This function recursively drills down a template until it find a string that starts with a bracket and a dollar sign (i.e. a negative number, in financial notation). If it finds any, it adds the Bootstrap class <code>text-danger</code> to the parent DOM element. Given a table like the one from the example earlier, this function makes the text of negative numbers turn red.</p>
+<p>Notice that this function works with tables with <code>thead</code>, multiple <code>tbody</code>, nested tables and just about anything else we can throw at it.</p>
+<p>Be aware, however, that the recursive pattern matching technique we saw above isn&#39;t exactly cheap: it scans every element in a tree, so it&#39;s an O(n) operation. Fortunately, if a transformer function becomes a bottleneck, we can optimize it to run in O(1) by rewriting it as a Sweet.js macro.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>Transformer functions are a powerful way of achieving the elusive separation of concerns between content and presentation. With them, we can write the simplest possible HTML structures to maximize readability and reusability, and then inject styles and even extra markup to support styling, after the fact.</p>
+<p>As the saying goes, &quot;with great power comes great responsibility&quot;: don&#39;t abuse transformer functions to such an extent that prevents others from understanding what is happening. Transformer functions <em>can</em> be written in declarative style for a narrow number of transformation types, but as you saw above, recursive and procedural code are the most straightforward way to express data mutations. However, that type of code is typically harder to debug (especially for non-trivial transformations), so make sure you use all the tools at your disposal (comments, documentation, unit testing, etc) to make the life of your future maintainer self easier.</p>
+
+			]]></description>
+		</item>
+		<item>
 			<title>JSON all the things</title>
 			<link>http://lhorie.github.io/mithril-blog/json-all-the-things.html</link>
 			<description><![CDATA[
