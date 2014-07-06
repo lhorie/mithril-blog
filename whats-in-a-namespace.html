@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="what-s-in-a-namespace">What&#39;s in a namespace</h2>
+<p>In Mithril examples, I often use modules interchangeably as namespaces:</p>
+<pre><code class="lang-javascript">//a namespace
+var app = {};
+
+app.controller = function() {
+    this.greeting = &quot;hello&quot;;
+};
+
+app.view = function(ctrl) {
+    return m(&quot;h1&quot;, ctrl.greeting);
+};
+
+m.module(document.body, app);
+</code></pre>
+<p>But the reality is that this 1-to-1 mapping between modules and namespaces isn&#39;t strictly required. In this article we&#39;ll look at different ways of organizing code and why you might want to choose one way over another.</p>
+<h3 id="vertical-namespaces">Vertical namespaces</h3>
+<p>This is what we just saw in the snippet above: each module is its own namespace, i.e. a namespace object contains a <code>controller</code> and a <code>view</code> properties. The namespace object might also contain helper functions and auxiliary model entities. This organization style is good when modules are self-contained units of functionality.</p>
+<p>For example, you might have a login page, a registration page and a user dashboard. Typically, for the purposes of development, each of these pages can be thought of as a standalone part of the application, and from a high-level perspective, it makes sense to have a <code>login</code> module, a <code>registration</code> module and a <code>dashboard</code> module.</p>
+<p>Trivial example apps are another use case where modules as namespaces are appropriate: a single namespacing module is a good middle ground to hold the entirety of our application without the bureaucracy of numerous namespaces and without polluting the global scope.</p>
+<h3 id="horizontal-namespaces">Horizontal namespaces</h3>
+<p>Another way of organizing code is to namespace things based on the layer where they live:</p>
+<pre><code class="lang-javascript">//controllers namespace
+var controllers = {};
+
+controllers.GreetingCtrl = function() {
+    this.greeting = &quot;hello&quot;;
+};
+
+//views namespace
+var views = {};
+
+views.greetingView = function(ctrl) {
+    return m(&quot;h1&quot;, ctrl.greeting);
+};
+
+m.module(document.body, {controller: controllers.GreetingCtrl, view: views.greetingView});
+</code></pre>
+<p>This organization style is appropriate when there&#39;s a lot of repetition somewhere. For example, financial applications often have a large number of paginated, filterable tables. We might have a table view, a filters view and a pagination view that get reused several times in different parts of the application. In applications like this, where we expect a high degree of code reusability, it&#39;s often awkward to map the reusable pieces to a neat one-controller-to-one-view paradigm.</p>
+<p>This style can also be more suitable when there&#39;s a large amount of scope creep or ad-hoc development, since in those cases, it&#39;s common that multiple existing pieces of functionality might get combined to support new features (i.e. &quot;can we also put thing X as a sidebar panel here&quot;).</p>
+<h3 id="quick-and-dirty">Quick and dirty</h3>
+<p>One other way to organize code is to not structure it at all:</p>
+<pre><code class="lang-javascript">var GreetingCtrl = function() {
+    this.greeting = &quot;hello&quot;;
+};
+
+var greetingView = function(ctrl) {
+    return m(&quot;h1&quot;, ctrl.greeting);
+};
+
+m.module(document.body, {controller: GreetingCtrl, view: greetingView});
+</code></pre>
+<p>Notice that in this example, there are no namespaces - instead we construct an anonymous module when we call <code>m.module</code>.</p>
+<p>There are some obvious weaknesses with this approach: we need to rely heavily on naming conventions to avoid collisions, and everything lives in the global scope (although you could put your code in an application-level namespace to prevent global scope pollution). But conversely, the lack of structure means that there&#39;s no namespacing verbosity when referencing arbitrary pieces of functionality from arbitrary places, so this style is suitable for exploratory coding and for hacking up quick prototypes, where we&#39;re not sure how pieces might end up coming together. Due to the reliance on naming conventions, this style is also grep-friendly: if we do need to organize code more formally down the road, we can search and replace things by name more easily than if our code used a mix of namespace objects and clever usage of the <code>this</code> keyword.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>Applications are not created equal, so it makes sense that we should have flexibility when organizing our code. The structure of sample code in the Mithril docs and here on the blog might appear to suggest that code should always fit neatly in a module, but Mithril itself doesn&#39;t actually impose any specific way of doing things.</p>
+<p>It&#39;s always a good idea to take the time to think about the reusability profile of your application, so you can organize code in a way that makes sense for you. </p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="whats-in-a-namespace.html">What's in a namespace</a></li>
+								<li><a href="when-css-lets-you-down.html">When CSS lets you down</a></li>
+								<li><a href="json-all-the-things.html">JSON all the things</a></li>
+								<li><a href="the-uniform-access-principle.html">The uniform access principle</a></li>
+								<li><a href="put-your-controllers-on-a-diet.html">Put your controllers on a diet</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

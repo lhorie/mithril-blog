@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/when-css-lets-you-down.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/whats-in-a-namespace.md"], dest: "feed.xml"}]
 			}
 		}
 	});
