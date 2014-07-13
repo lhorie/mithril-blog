@@ -38,9 +38,10 @@ function binds(data) {
 };
 
 m("form", binds(ctrl.user), [
-  m("input[name=first]", {value: ctrl.user.first}),
-  m("input[name=last]", {value: ctrl.user.last}),
-  m("input[name=email]", {value: ctrl.user.email})
+	m("input[name=first]", {value: ctrl.user.first}),
+	m("input[name=last]", {value: ctrl.user.last}),
+	m("input[name=email]", {value: ctrl.user.email}),
+	m("button", {onclick: ctrl.submit})
 ]);
 ```
 

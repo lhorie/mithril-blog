@@ -45,9 +45,10 @@ function binds(data) {
 };
 
 m(&quot;form&quot;, binds(ctrl.user), [
-  m(&quot;input[name=first]&quot;, {value: ctrl.user.first}),
-  m(&quot;input[name=last]&quot;, {value: ctrl.user.last}),
-  m(&quot;input[name=email]&quot;, {value: ctrl.user.email})
+    m(&quot;input[name=first]&quot;, {value: ctrl.user.first}),
+    m(&quot;input[name=last]&quot;, {value: ctrl.user.last}),
+    m(&quot;input[name=email]&quot;, {value: ctrl.user.email}),
+    m(&quot;button&quot;, {onclick: ctrl.submit})
 ]);
 </code></pre>
 <p>As you can see in the code above, we created an <em>unidirectional binding</em> called <code>binds</code> which syncs the controller object with the DOM values whenever a <code>change</code> event is triggered (as opposed to spamming the <code>oninput</code> event like we saw earlier). The event handler itself is also quite simple: DOM events propagate through the DOM tree, so we can simply intercept them at the <code>form</code> element and look at the event target to figure out where the event originated. And from there we can update our data model.</p>
