@@ -1,5 +1,6 @@
 ## Articles
 
+- [Asymmetrical data bindings](asymmetrical-data-bindings.html) - July 13, 2014
 - [What's in a namespace](whats-in-a-namespace.html) - July 06, 2014
 - [When CSS lets you down](when-css-lets-you-down.html) - June 29, 2014
 - [JSON all the things](json-all-the-things.html) - June 22, 2014
