@@ -8,7 +8,7 @@ With jQuery, the data flow would involve fishing out the values for the inputs w
 
 With frameworks like Angular, we instead sync up the data from the DOM via bi-directional bindings, which essentially updates a Javascript object on the fly every time a DOM event fires. Because Angular (and most frameworks) do this for us under the hood, the result is the typical adage of "programmers knowing the value of everything and the cost of nothing". But nonetheless, the cost of updating things on every keystroke is there, and unbeknownst to the application developers, there's actually a whole lot of hidden supporting code to run auto-redrawing.
 
-The problem with out-of-the-box bi-directional bindings is that their very intent of hiding complexity also prevents us from getting control over the underlying mechanisms. The defaults that the framework provide us are optimized for robustness, and this comes at a cost on the performance dimension.
+The problem with out-of-the-box bi-directional bindings is that their very intent of hiding complexity also prevents us from getting control over the underlying mechanisms. The defaults that the framework provide us are optimized for robustness, and this comes at a cost on the flexibility and performance dimensions.
 
 ### Enter asymmetry
 
