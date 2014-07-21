@@ -5,10 +5,53 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Just what the doctor prescribed</title>
+			<link>http://lhorie.github.io/mithril-blog/just-what-the-doctor-prescribed.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Asymmetrical data bindings</title>
 			<link>http://lhorie.github.io/mithril-blog/asymmetrical-data-bindings.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="asymmetrical-data-bindings">Asymmetrical data bindings</h2>
+<p>The other day I got a request that Mithril should have a <code>$</code> tool. You know, like jQuery. At first glance, it may seem like a very backwards request, after all the whole point of frameworks like Mithril is to avoid the DOM puppetry that makes jQuery code hard to maintain. But digging deeper, it turns out that there&#39;s an interesting problem here that ended up becoming overlooked by bigger frameworks.</p>
+<p>Consider that you have a form and all you want to do is use it the way HTML forms were intended to: you fill out fields and then submit the data.</p>
+<p>With jQuery, the data flow would involve fishing out the values for the inputs with <code>serialize</code> or manual DOM queries and <code>val</code> calls. As I mentioned, this type of puppetry code often ends up becoming hard to maintain, but as it turns out, it&#39;s actually pretty efficient, since there&#39;s only the cost assembling the data for the ajax request once.</p>
+<p>With frameworks like Angular, we instead sync up the data from the DOM via bi-directional bindings, which essentially updates a Javascript object on the fly every time a DOM event fires. Because Angular (and most frameworks) do this for us under the hood, the result is the typical adage of &quot;programmers knowing the value of everything and the cost of nothing&quot;. But nonetheless, the cost of updating things on every keystroke is there, and unbeknownst to the application developers, there&#39;s actually a whole lot of hidden supporting code to run auto-redrawing.</p>
+<p>The problem with out-of-the-box bi-directional bindings is that their very intent of hiding complexity also prevents us from getting control over the underlying mechanisms. The defaults that the framework provide us are optimized for robustness, and this comes at a cost on the flexibility and performance dimensions.</p>
+<h3 id="enter-asymmetry">Enter asymmetry</h3>
+<p>Mithril, being a minimalist framework, doesn&#39;t offer traditional bi-directional binding utilities out of the box. And as it turns out, they are not necessarily the best fit for our use case anyways. Here&#39;s a snippet to illustrate:</p>
+<pre><code class="lang-javascript">m(&quot;form&quot;, [
+    m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.user.first), value: ctrl.user.first()}),
+    m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.user.last), value: ctrl.user.last()}),
+    m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.user.email), value: ctrl.user.email()}),
+    m(&quot;button&quot;, {onclick: ctrl.submit})
+]);
+</code></pre>
+<p>As you can see, there&#39;s a lot of repetition and a whole lot of events firing during the course of filling out this form. Implementing bi-directional bindings in Mithril makes it blindingly obvious that a lot of bindings yield a lot of code, which waste a lot of CPU cycles. There&#39;s no magic shielding us from this fact and then biting us in the butt later.</p>
+<p>Fortunately, we can do better. Our jQuery experience has taught us that there are many ways to improve performance when there are lots of DOM event handlers. Using less spammy events (say, <code>onchange</code> instead of <code>oninput</code>) is one example that is trivial to implement in Mithril. Another more interesting example is to use the browser&#39;s <strong>event delegation system</strong>.</p>
+<p>As it turns out, with Mithril, this is also simple to accomplish: just attach an event handler on a parent and handle the event object there:</p>
+<pre><code class="lang-javascript">//data binding helper function
+function binds(data) {
+  return {onchange: function(e) {
+    data[e.target.name] = e.target.value;
+  }};
+};
+
+m(&quot;form&quot;, binds(ctrl.user), [
+    m(&quot;input[name=first]&quot;, {value: ctrl.user.first}),
+    m(&quot;input[name=last]&quot;, {value: ctrl.user.last}),
+    m(&quot;input[name=email]&quot;, {value: ctrl.user.email}),
+    m(&quot;button&quot;, {onclick: ctrl.submit})
+]);
+</code></pre>
+<p>As you can see in the code above, we created an <em>unidirectional binding</em> called <code>binds</code> which syncs the controller object with the DOM values whenever a <code>change</code> event is triggered (as opposed to spamming the <code>oninput</code> event like we saw earlier). The event handler itself is also quite simple: DOM events propagate through the DOM tree, so we can simply intercept them at the <code>form</code> element and look at the event target to figure out where the event originated. And from there we can update our data model.</p>
+<p>And as a bonus, the code is a lot cleaner and more readable.</p>
+<p>For a lack of a better name, I&#39;m calling these <em>asymmetrical data bindings</em>, because the code to control the flow of data from view to model is not symmetrical to the code that brings it from model to view.</p>
+<p>Hopefully this article will encourage you to rethink what data bindings actually are, and remind you that there are often powerful tools waiting to be rediscovered when we drop down to lower abstraction levels.</p>
+
 			]]></description>
 		</item>
 		<item>
