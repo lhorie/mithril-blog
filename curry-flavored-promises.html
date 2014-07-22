@@ -30,18 +30,23 @@ var pastItems = function(items) {
         return item.date &lt; now
     });
 };
+//a FP-friendly console.log
+var log = function(value) {
+    console.log(value)
+    return value
+}
 
 //here&#39;s an AJAX request and a chain of promises
 m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
-    .then(console.log) // log all projects
+    .then(log) // log all projects
     .then(pastItems) // filter past projects
-    .then(console.log) // log past projects only
+    .then(log) // log past projects only
 </code></pre>
-<p>Notice we&#39;re not calling <code>console.log()</code> nor <code>pastItems()</code>, but instead we&#39;re passing them to the promise&#39;s <code>.then()</code> method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to <code>.then</code> methods are only called at a later time, when the request completes.</p>
+<p>Notice we&#39;re not calling <code>log()</code> nor <code>pastItems()</code>, but instead we&#39;re passing them to the promise&#39;s <code>.then()</code> method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to <code>.then</code> methods are only called at a later time, when the request completes.</p>
 <p>Organizing our code as shown above is useful because it makes it easier for us to reuse code:</p>
 <pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/vacations&quot;})
     .then(pastItems) // filter past vacations
-    .then(console.log) // log past vacations
+    .then(log) // log past vacations
 </code></pre>
 <p>We can use the <code>pastItems</code> function to filter the result of a <code>vacations</code> web service (or any other web services) in addition to the projects one. Of course, we can also call the function directly if we have a list laying around that we want to filter.</p>
 <p>We can mix and match code too:</p>
@@ -55,7 +60,7 @@ var createdByJohnDoe = function(items) {
 m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
     .then(pastItems) // filter past projects
     .then(createdByJohnDoe) // filter projects created by john doe
-    .then(console.log) // log past projects created by john doe
+    .then(log) // log past projects created by john doe
 </code></pre>
 <p>A clever reader will probably notice that even though the code above is terse and modular, there is some room for improvement: The <code>createdByJohnDoe</code> function is not very reusable - we want to be able to filter by an arbitrary user, not just John Doe.</p>
 <p>Fortunately, refactoring is easy. We can simply refactor our function to accept a <code>user</code> argument:</p>
@@ -69,7 +74,7 @@ m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
 <pre><code class="lang-javascript">m.request({method: &quot;GET&quot;, url: &quot;/api/projects&quot;})
     .then(pastItems) // filter past projects
     .then(createdBy.bind(this, &quot;John Doe&quot;)) // filter projects created by john doe
-    .then(console.log) // log past projects created by john doe
+    .then(log) // log past projects created by john doe
 </code></pre>
 <p>And voila! Curry flavored promises.</p>
 <hr>
@@ -90,9 +95,10 @@ var byJohn = createdBy(&quot;John Doe&quot;, things); // [{name: &quot;foo&quot;
 var byJohn = createdByJohnDoe(things); //[{name: &quot;foo&quot;, createdBy: &quot;John Doe&quot;}]
 </code></pre>
 <p>Whereas the signature of <code>createdBy</code> is <code>function(user, items)</code>, in the curried <code>createdByJohnDoe</code> function, the signature is simply <code>function(items)</code> because <code>user</code> is already present via an internal closure. Since <code>items</code> is the first argument of <code>createdByJohnDoe</code>, we can then pass this function to the promise&#39;s <code>.then()</code> method, which takes a function with signature <code>function(value)</code>, whose argument <code>value</code> is bound to the value being piped through the promise chain.</p>
-<p>So in the same way that calling <code>.then(console.log)</code> is equivalent to the code below:</p>
+<p>So in the same way that calling <code>.then(log)</code> is equivalent to the code below:</p>
 <pre><code>.then(function(value) {
-    console.log(value)
+    log(value)
+    return value
 })
 </code></pre><p>the same is true about the curried <code>createdByJohnDoe</code>. We can simply use the one-liner <code>.then()</code> calls as shown earlier, without the need to create the anonymous function.</p>
 <p>Currying is a powerful technique that allows us to generalize and modularize our code, and then bring the pieces back together in a modular way.</p>

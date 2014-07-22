@@ -14,22 +14,27 @@ var pastItems = function(items) {
 		return item.date < now
 	});
 };
+//a FP-friendly console.log
+var log = function(value) {
+	console.log(value)
+	return value
+}
 
 //here's an AJAX request and a chain of promises
 m.request({method: "GET", url: "/api/projects"})
-	.then(console.log) // log all projects
+	.then(log) // log all projects
 	.then(pastItems) // filter past projects
-	.then(console.log) // log past projects only
+	.then(log) // log past projects only
 ```
 
-Notice we're not calling `console.log()` nor `pastItems()`, but instead we're passing them to the promise's `.then()` method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to `.then` methods are only called at a later time, when the request completes.
+Notice we're not calling `log()` nor `pastItems()`, but instead we're passing them to the promise's `.then()` method. What the code above does should be self-explanatory: it requests some projects, then logs them, then filters the list to only contain past projects, then logs the past projects. The one caveat that should be mentioned is that the only thing that happens immediately is the AJAX call. All the functions we passed to `.then` methods are only called at a later time, when the request completes.
 
 Organizing our code as shown above is useful because it makes it easier for us to reuse code:
 
 ```javascript
 m.request({method: "GET", url: "/api/vacations"})
 	.then(pastItems) // filter past vacations
-	.then(console.log) // log past vacations
+	.then(log) // log past vacations
 ```
 
 We can use the `pastItems` function to filter the result of a `vacations` web service (or any other web services) in addition to the projects one. Of course, we can also call the function directly if we have a list laying around that we want to filter.
@@ -47,7 +52,7 @@ var createdByJohnDoe = function(items) {
 m.request({method: "GET", url: "/api/projects"})
 	.then(pastItems) // filter past projects
 	.then(createdByJohnDoe) // filter projects created by john doe
-	.then(console.log) // log past projects created by john doe
+	.then(log) // log past projects created by john doe
 ```
 
 A clever reader will probably notice that even though the code above is terse and modular, there is some room for improvement: The `createdByJohnDoe` function is not very reusable - we want to be able to filter by an arbitrary user, not just John Doe.
@@ -68,7 +73,7 @@ And then, we can **curry** this generic `createdBy` function to get the equivale
 m.request({method: "GET", url: "/api/projects"})
 	.then(pastItems) // filter past projects
 	.then(createdBy.bind(this, "John Doe")) // filter projects created by john doe
-	.then(console.log) // log past projects created by john doe
+	.then(log) // log past projects created by john doe
 ```
 
 And voila! Curry flavored promises.
@@ -102,11 +107,12 @@ var byJohn = createdByJohnDoe(things); //[{name: "foo", createdBy: "John Doe"}]
 
 Whereas the signature of `createdBy` is `function(user, items)`, in the curried `createdByJohnDoe` function, the signature is simply `function(items)` because `user` is already present via an internal closure. Since `items` is the first argument of `createdByJohnDoe`, we can then pass this function to the promise's `.then()` method, which takes a function with signature `function(value)`, whose argument `value` is bound to the value being piped through the promise chain.
 
-So in the same way that calling `.then(console.log)` is equivalent to the code below:
+So in the same way that calling `.then(log)` is equivalent to the code below:
 
 ```
 .then(function(value) {
-	console.log(value)
+	log(value)
+	return value
 })
 ```
 
