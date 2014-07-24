@@ -74,7 +74,7 @@ m.route(document.body, &quot;/&quot;, {
 </code></pre>
 <p>This time, notice that we are passing an <code>options</code> argument to the controller, and then passing in the actual data at routing time. This means that now the controller is agnostic about what is contained in the list of projects.</p>
 <p>This way we can create different data sources and tie them to specific routes. Here&#39;s one example:</p>
-<pre><code>//model
+<pre><code class="lang-javascript">//model
 var Project = {
     list: function() {
         return m.request({method: &quot;GET&quot;, url: &quot;/api/project&quot;})
@@ -101,7 +101,8 @@ m.route(document.body, &quot;/&quot;, {
         view: MyView
     }
 })
-</code></pre><p>As you can see, we defined a second route that works just like the previous one, except that it displays projects assigned to a person, rather than all projects.</p>
+</code></pre>
+<p>As you can see, we defined a second route that works just like the previous one, except that it displays projects assigned to a person, rather than all projects.</p>
 <p>This coding style also happens to be recursion-friendly: now our controller has a signature that allows us to nest it into other components and pass data to it naturally. So no only do we have turtles all the way down as we create components, we are also ready to have turtles all the way up too.</p>
 <p>So there you have it. Painless dependency injection.</p>
 

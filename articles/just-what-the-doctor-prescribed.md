@@ -78,7 +78,7 @@ This time, notice that we are passing an `options` argument to the controller, a
 
 This way we can create different data sources and tie them to specific routes. Here's one example:
 
-```
+```javascript
 //model
 var Project = {
 	list: function() {
