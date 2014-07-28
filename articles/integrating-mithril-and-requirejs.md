@@ -6,7 +6,7 @@ That's a great question. For those who don't know, RequireJS is a library to man
 
 There are both advantages and disadvantages for using a system like RequireJS. The main disadvantage comes from the extra latency that is introduced by RequireJS: you need to download it before you can download anything else. The advantage is that you can then avoid loading code for features that the user never uses. So if you expect your codebase to be large enough that downloading all of it at once takes longer than the network latency of downloading a bootstrapper, using RequireJS is a good idea.
 
-Anyways, back to the question. Mithril ships with a [single-page-application router](http://lhorie.github.io/mithril/mithril-route.html), which lets us show different content depending on the URL, without necessarily reloading the page. Here's a simple example:
+Anyways, back to the question. Mithril ships with a [single-page-application router](http://lhorie.github.io/mithril/mithril.route.html), which lets us show different content depending on the URL, without necessarily reloading the page. Here's a simple example:
 
 ```javascript
 var page1 = {}
