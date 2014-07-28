@@ -5,10 +5,114 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Integrating Mithril and RequireJS</title>
+			<link>http://lhorie.github.io/mithril-blog/integrating-mithril-and-requirejs.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Just what the doctor prescribed</title>
 			<link>http://lhorie.github.io/mithril-blog/just-what-the-doctor-prescribed.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="just-what-the-doctor-prescribed">Just what the doctor prescribed</h2>
+<p>If you are familiar with enterprisey frameworks, you probably have heard of a thing called <strong>dependency injection</strong>. If not, read on.</p>
+<p>Dependency injection is really just a fancy way of saying that instead of declaring things inside of functions, the code is written in such a way that these things are passed into the functions as arguments.</p>
+<p>Let me illustrate. You&#39;re probably familiar with this idiom in Mithril:</p>
+<pre><code class="lang-javascript">//model
+var Project = {
+    list: function() {
+        return m.request({method: &quot;GET&quot;, url: &quot;/api/project&quot;})
+    }
+}
+
+//controller
+var MyController = function() {
+    this.projects = Project.list()
+}
+
+//view
+var MyView = function(ctrl) {
+    return ctrl.projects.map(function(project) {
+        return m(&quot;div&quot;, project.name)
+    })
+}
+
+//initialize routing
+m.route(document.body, &quot;/&quot;, {
+    &quot;/&quot;: {
+        controller: MyController,
+        view: MyView
+    }
+})
+</code></pre>
+<p>It&#39;s all very straightforward code: we define a model entity, we then use it in a controller, and we render it in a view.</p>
+<p>There&#39;s one caveat though: the controller isn&#39;t very reusable because it always requests the same thing: a list of all projects. What if we wanted to have a list of all projects who were created after a certain date? Or a list of projects assigned to a certain person? Using the coding style above means we either need to start adding <code>if</code> statements to the controller, or create new controllers altogether.</p>
+<h3 id="enter-dependency-injection">Enter dependency injection</h3>
+<p>With dependency injection we can write a controller where the actual list of projects is passed in as an argument to the function:</p>
+<pre><code class="lang-javascript">//model
+var Project = {
+    list: function() {
+        return m.request({method: &quot;GET&quot;, url: &quot;/api/project&quot;})
+    }
+}
+
+//controller
+var MyController = function(options) {
+    this.projects = options.projects
+}
+
+//view
+var MyView = function(ctrl) {
+    return ctrl.projects.map(function(project) {
+        return m(&quot;div&quot;, project.name)
+    })
+}
+
+//initialize routing
+m.route(document.body, &quot;/&quot;, {
+    &quot;/&quot;: {
+        controller: function() {
+            return new MyController({projects: Project.list()})
+        },
+        view: MyView
+    }
+})
+</code></pre>
+<p>This time, notice that we are passing an <code>options</code> argument to the controller, and then passing in the actual data at routing time. This means that now the controller is agnostic about what is contained in the list of projects.</p>
+<p>This way we can create different data sources and tie them to specific routes. Here&#39;s one example:</p>
+<pre><code class="lang-javascript">//model
+var Project = {
+    list: function() {
+        return m.request({method: &quot;GET&quot;, url: &quot;/api/project&quot;})
+    },
+    listByAssignee: function(userID) {
+        return m.request({method: &quot;GET&quot;, url: &quot;/api/project&quot;, data: {assignee: userID}})
+    }
+}
+
+// controller and view are the same ...
+
+//initialize routing
+m.route(document.body, &quot;/&quot;, {
+    &quot;/&quot;: {
+        controller: function() {
+            return new MyController({projects: Project.list()})
+        },
+        view: MyView
+    },
+    &quot;/assigned/:userID&quot;: {
+        controller: function() {
+            return new MyController({projects: Project.listByAssignee(m.route.param(&quot;userID&quot;))})
+        },
+        view: MyView
+    }
+})
+</code></pre>
+<p>As you can see, we defined a second route that works just like the previous one, except that it displays projects assigned to a person, rather than all projects.</p>
+<p>This coding style also happens to be recursion-friendly: now our controller has a signature that allows us to nest it into other components and pass data to it naturally. So no only do we have turtles all the way down as we create components, we are also ready to have turtles all the way up too.</p>
+<p>So there you have it. Painless dependency injection.</p>
+
 			]]></description>
 		</item>
 		<item>
