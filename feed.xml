@@ -9,7 +9,7 @@
 			<link>http://lhorie.github.io/mithril-blog/integrating-mithril-and-requirejs.html</link>
 			<description><![CDATA[
 <h2 id="integrating-mithril-and-requirejs">Integrating Mithril and RequireJS</h2>
-<p>Today&#39;s article comes from a question from Woody Gilk: can Mithril be used with RequireJS?</p>
+<p>Today&#39;s article comes from a question from <a href="https://twitter.com/shadowhand">Woody Gilk</a>: can Mithril be used with RequireJS?</p>
 <p>That&#39;s a great question. For those who don&#39;t know, RequireJS is a library to manage asynchronous dependencies, or in plain english, it lets us download parts of our applications as they become needed, rather than bundling the entire codebase in one javascript file that gets downloaded at page load.</p>
 <p>There are both advantages and disadvantages for using a system like RequireJS. The main disadvantage comes from the extra latency that is introduced by RequireJS: you need to download it before you can download anything else. The advantage is that you can then avoid loading code for features that the user never uses. So if you expect your codebase to be large enough that downloading all of it at once takes longer than the network latency of downloading a bootstrapper, using RequireJS is a good idea.</p>
 <p>Anyways, back to the question. Mithril ships with a <a href="http://lhorie.github.io/mithril/mithril.route.html">single-page-application router</a>, which lets us show different content depending on the URL, without necessarily reloading the page. Here&#39;s a simple example:</p>

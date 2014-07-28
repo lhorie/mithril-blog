@@ -1,6 +1,6 @@
 ## Integrating Mithril and RequireJS
 
-Today's article comes from a question from Woody Gilk: can Mithril be used with RequireJS?
+Today's article comes from a question from [Woody Gilk](https://twitter.com/shadowhand): can Mithril be used with RequireJS?
 
 That's a great question. For those who don't know, RequireJS is a library to manage asynchronous dependencies, or in plain english, it lets us download parts of our applications as they become needed, rather than bundling the entire codebase in one javascript file that gets downloaded at page load.
 
