@@ -1,9 +1,10 @@
 ## Articles
 
+- [Prototypes, closures and the zen of javascript OOP](prototypes-closures-and-the-zen-of-javascript-oop.html) - August 3, 2014
 - [Integrating Mithril and RequireJS](integrating-mithril-and-requirejs.html) - July 27, 2014
 - [Just what the doctor prescribed](just-what-the-doctor-prescribed.html) - July 20, 2014
 - [Asymmetrical data bindings](asymmetrical-data-bindings.html) - July 13, 2014
-- [What's in a namespace](whats-in-a-namespace.html) - July 06, 2014
+- [What's in a namespace](whats-in-a-namespace.html) - July 6, 2014
 - [When CSS lets you down](when-css-lets-you-down.html) - June 29, 2014
 - [JSON all the things](json-all-the-things.html) - June 22, 2014
 - [The uniform access principle](the-uniform-access-principle.html) - June 15, 2014

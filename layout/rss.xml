@@ -5,10 +5,183 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Prototypes, closures and the zen of javascript OOP</title>
+			<link>http://lhorie.github.io/mithril-blog/prototypes-closures-and-the-zen-of-javascript-oop.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Integrating Mithril and RequireJS</title>
 			<link>http://lhorie.github.io/mithril-blog/integrating-mithril-and-requirejs.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="integrating-mithril-and-requirejs">Integrating Mithril and RequireJS</h2>
+<p>Today&#39;s article comes from a question from <a href="https://twitter.com/shadowhand">Woody Gilk</a>: can Mithril be used with RequireJS?</p>
+<p>That&#39;s a great question. For those who don&#39;t know, RequireJS is a library to manage asynchronous dependencies, or in plain english, it lets us download parts of our applications as they become needed, rather than bundling the entire codebase in one javascript file that gets downloaded at page load.</p>
+<p>There are both advantages and disadvantages for using a system like RequireJS. The main disadvantage comes from the extra latency that is introduced by RequireJS: you need to download it before you can download anything else. The advantage is that you can then avoid loading code for features that the user never uses. So if you expect your codebase to be large enough that downloading all of it at once takes longer than the network latency of downloading a bootstrapper, using RequireJS is a good idea.</p>
+<p>Anyways, back to the question. Mithril ships with a <a href="http://lhorie.github.io/mithril/mithril.route.html">single-page-application router</a>, which lets us show different content depending on the URL, without necessarily reloading the page. Here&#39;s a simple example:</p>
+<pre><code class="lang-javascript">var page1 = {}
+page1.controller = function() {
+    this.greeting = &quot;Hello world&quot;
+}
+page1.view = function(ctrl) {
+    return [
+        m(&quot;h1&quot;, ctrl.greeting),
+        m(&quot;a[href=&#39;/page-two&#39;]&quot;, {config: m.route}, &quot;Go to page 2&quot;)
+    ]
+}
+
+var page2 = {}
+page2.controller = function() {
+    this.greeting = &quot;Hi from page 2&quot;
+}
+page2.view = function(ctrl) {
+    return [
+        m(&quot;h1&quot;, ctrl.greeting),
+        m(&quot;a[href=&#39;/page-one&#39;]&quot;, {config: m.route}, &quot;Go back to page 1&quot;)
+    ]
+}
+
+m.route(document, &quot;/page-one&quot;, {
+    &quot;/page-one&quot;: page1,
+    &quot;/page-two&quot;: page2,
+})
+</code></pre>
+<p>Here we define two sample modules, <code>page1</code> and <code>page2</code>. Each contains a controller and a view. The router at the bottom defines that <code>/page-one</code> is the default page, and that there are two possible pages, at the URLs <code>/page-one</code> and <code>/page-two</code>, which load the respectively modules.</p>
+<p>The default routing mode is to use the querystring, so if we ran this app from the URL <code>http://localhost</code>, it would then redirect to <code>http://localhost/?/page-one</code>. Navigating to page 2 would change the URL to <code>http://localhost/?/page-two</code></p>
+<p>There are other routing modes available, and you can learn more about them <a href="http://lhorie.github.io/mithril/mithril.route.html#mode">here</a>, but they are not relevant to this article, so let&#39;s move ahead.</p>
+<h3 id="splitting-an-app">Splitting an app</h3>
+<p>In the contrived example above, the code is obviously simple and there&#39;s no benefit to using an asynchronous module loader like RequireJS, but let&#39;s pretend our app was really big and had tens of thousands of different modules, each weighting at 10kb or more. In that case, it&#39;s clear that loading the entire app on page load would require users to download an unrealistic amount of code even if they were only planning on using 2 or 3 pages.</p>
+<p>Let&#39;s look at how one might implement an <strong>asynchronous module loader</strong> to allow us to split the app into separate files. Here&#39;s a simple one using Mithril&#39;s <code>m.request</code></p>
+<pre><code class="lang-javascript">//module loader helper
+var asyncModule = function(name) {
+    return {
+        controller: function() {
+            m.request({
+                method: &quot;GET&quot;,
+                url: name + &quot;.js&quot;,
+                deserialize: function(data) {
+                    return new Function(&quot;var module = {};&quot; + data + &quot;;return module&quot;).call().exports
+                }
+            })
+            .then(function(module) {
+                this.controller = new module.controller()
+                this.view = module.view
+            }.bind(this))
+        },
+        view: function(ctrl) {
+            return ctrl.view(ctrl.controller)
+        }
+    }
+}
+
+//routes
+m.route(document.body, &quot;/page-one&quot;, {
+    &quot;/page-one&quot;: asyncModule(&quot;page1&quot;),
+    &quot;/page-two&quot;: asyncModule(&quot;page2&quot;)
+})
+</code></pre>
+<p>In the code above, we created a helper function called <code>asyncModule</code>, which we are going to use as an intermediary handler for all routes in our application. This technique is known as the <strong>Front Controller pattern</strong>.</p>
+<p>The <code>asyncModule</code> function returns a <a href="http://lhorie.github.io/mithril/mithril.module.html">Mithril module</a>, which is nothing more than a plain Javascript object with a <code>controller</code> and a <code>view</code> properties (both of which are functions).</p>
+<p>In this module, the <code>controller</code> function loads a javascript file via AJAX by using <code>m.request</code>. When calling <code>m.request</code>, we define a custom <code>deserialize</code> option, so that instead of parsing the file as JSON, we compile the code as a function, and then execute it. The function returns a CommonJS module.</p>
+<p>A CommonJS module is also a plain Javascript object, but it has a property called <code>exports</code>, which can hold an arbitrary payload.</p>
+<p>Here&#39;s what an asynchronous module file would need to look like to work with the loader we just created:</p>
+<pre><code class="lang-javascript">//file: page1.js
+var page1 = {}
+page1.controller = function() {
+    this.greeting = &quot;Hello world&quot;
+}
+page1.view = function(ctrl) {
+    return [
+        m(&quot;h1&quot;, ctrl.greeting),
+        m(&quot;a[href=&#39;/page-two&#39;]&quot;, {config: m.route}, &quot;Go to page 2&quot;)
+    ]
+}
+
+
+module.exports = page1
+</code></pre>
+<p>As you can see, we just copied the <code>page1</code> Mithril module into a file and assigned it to <code>module.exports</code>, which, in CommonJS environments, is assumed to always exist. If we do the same for the <code>page2</code> module, we can then run the example.</p>
+<p>In <code>asyncModule</code>&#39;s controller, we added a callback to <code>m.request</code>&#39;s returned promise. This callback then creates an instance of <code>page1</code>&#39;s controller, and exposes <code>ctrl.controller</code> and <code>ctrl.view</code>, which are then used in the view to assemble the expected semantics of the <code>page1</code> module.</p>
+<p>The end result is that running this code loads the <code>page1</code> from a separate file successfully. <a href="http://plnkr.co/edit/dkSEb9rh9WrZT2ZVqN3l?p=preview">You can see it in action here</a></p>
+<h3 id="managing-dependencies">Managing dependencies</h3>
+<p>The problem with the code above (and CommonJS in general) is that asynchronous modules can have dependencies. For example, we might have a <code>page3</code> module which needs a datepicker and a autocompleter. In situations like that, we need to first load the dependencies, and only after all these dependencies are loaded, we are able to run the module in question. The API for adding dependencies in CommonJS is synchronous, so it would have to implemented as a blocking call (which is unacceptable because it would lock up the browser)</p>
+<p>One way to tackle the issue is to load all the dependencies at page load. This makes sense if the dependencies are reused frequently throughout the application. If a lot of pages in our example app use the datepicker and autocompleter modules, then it&#39;s better to preload them on page load, rather than on route change.</p>
+<p>Preloading takes advantage of the browser&#39;s parallel downloading features, so the user never waits more than one network round-trip. Loading these dependencies on demand requires us to download the module in question to find out what dependencies to download (and <em>then</em> download them), which takes two network round-trips one after the other.</p>
+<p>If, however, our application has a lot of one-off dependencies, then preloading all of them becomes unfeasible for the same reason as having a large number of modules. It should also be noted that having a deep hierarchy of dependencies could lead to a long queue of HTTP requests, which could have a disastrous impact on performance due to latency.</p>
+<p>Thankfully, there&#39;s RequireJS. It provides tools to resolve dependency graphs, cache redundant dependencies and server-side bundling tools to manually optimize the latency  profile of deep dependency trees.</p>
+<p>We can adapt our <code>asyncModule</code> helper function to use it instead of our naive loader:</p>
+<pre><code class="lang-javascript">var asyncModule = function(name) {
+    return {
+        controller: function() {
+            m.startComputation()
+
+            require([name], function(module) {
+                this.controller = new module.controller()
+                this.view = module.view
+
+                m.endComputation()
+            }.bind(this))
+        },
+        view: function(ctrl) {
+            return ctrl.view(ctrl.controller)
+        }
+    }
+}
+</code></pre>
+<p>Because we&#39;re using RequireJS&#39;s AJAX mechanism, we need to tell Mithril when this 3rd party asynchronous operation is done.</p>
+<p>This is accomplished with <code>m.startComputation</code> and <code>m.endComputation</code>. <code>m.startComputation</code> tells Mithril that an asynchronous operation is going to be initiated and that rendering should be deferred, and <code>m.endComputation</code> tells Mithril that the asynchronous operation completed and that Mithril may redraw if no other asynchronous operations are still pending (and they could be if the module itself makes more AJAX requests for data). The reason we are using these methods instead of <code>m.redraw</code> is that using <code>m.redraw</code> would trigger two redraws (one immediately when the controller returns, and another when the RequireJS module is resolved). Usually aggressive rendering is a bad idea, because the controller might not be fully initialized with data by the time it returns, which could lead to null reference exceptions in the view.</p>
+<p>The <code>require</code> function is RequireJS&#39;s asynchronous module loader. It takes the name of the file as a parameter, just like our helper function, and then runs a callback function when that module is available.</p>
+<p>As with the CommonJS interface, RequireJS also has a specific pre-defined way of exporting modules from files.</p>
+<pre><code class="lang-javascript">//file: page1.js
+define(function() {
+    var page1 = {}
+    page1.controller = function() {
+        this.greeting = &quot;Hello world&quot;
+    }
+    page1.view = function(ctrl) {
+        return [
+            m(&quot;h1&quot;, ctrl.greeting),
+            m(&quot;a[href=&#39;/page-two&#39;]&quot;, {config: m.route}, &quot;Go to page 2&quot;)
+        ]
+    }
+
+    return page1
+})
+</code></pre>
+<p>Instead of assigning our <code>page1</code> module to a <code>module.exports</code> variable, we wrap the whole thing in a callback function that returns it, and then pass that callback as an argument to a RequireJS function called <code>define</code>, which is assumed to always exist in RequireJS-enabled environments.</p>
+<p>If we do this change to the <code>page2.js</code> file, we can then run the code. <a href="http://plnkr.co/edit/ds77VeFBJyyHefHMFyOS?p=preview">Here&#39;s the code in action.</a></p>
+<hr>
+<p>Now that we have ported our application to use RequireJS, we can then start using it to manage our dependencies. The simplest way to inject a dependency with RequireJS is to pass the file name (sans extension) to the <code>define</code> function, much like we did with the <code>require</code> call.</p>
+<pre><code class="lang-javascript">//file: page3
+define([&quot;datepicker&quot;, &quot;autocompleter&quot;], function(datepicker, autocompleter) {
+    var page3 = {}
+
+    /*
+    initialize it here
+    */
+
+    return page3
+})
+</code></pre>
+<p>The dependencies can be <code>define</code>d in the same way we covered before, in a turtles-all-the-way-down fashion.</p>
+<pre><code class="lang-javascript">//file: datepicker.js
+define(function() {
+    var datepicker = {}
+
+    /*
+    initialize it here
+    */
+
+    return datepicker
+})
+</code></pre>
+<p>Because dependencies are, by definition, loaded before the module itself, we don&#39;t need to do any extra work on the <code>asyncModule</code> helper to cater for them. Once a relevant module is ready, we can be sure that all dependencies are ready as well.</p>
+<h3 id="parting-thoughts">Parting thoughts</h3>
+<p>I should note that idiomatic RequireJS initialization is a little bit different from what I showed here (it uses a data attribute on the script tag, and a initialization file which is itself loaded asynchronously), but I wanted to keep the magic to a minimum to make it easier to understand the core concepts and to visualize where latency occurs.</p>
+<p>There&#39;s a broad range of advanced scenarios that RequireJS can handle that are not in scope for this article, (bundling, shallow exclusions, circular dependencies, to name a few topics) so I encourage you to read through their documentation.</p>
+<p>Phew! I hope this article wasn&#39;t too overwhelming. Hopefully it sheds some light into why one might want to use RequireJS, and how to do not-so-trivial 3rd party library integration with Mithril.</p>
+
 			]]></description>
 		</item>
 		<item>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="prototypes-closures-and-the-zen-of-javascript-oop">Prototypes, closures and the zen of Javascript OOP</h2>
+<blockquote>
+<p>   The venerable master Qc Na was walking with his student, Anton. Hoping to prompt the master into a discussion, Anton said &quot;Master, I have heard that objects are a very good thing - is this true?&quot; Qc Na looked pityingly at his student and replied, &quot;Foolish pupil - objects are merely a poor man&#39;s closures.&quot;</p>
+<p>   Chastised, Anton took his leave from his master and returned to his cell, intent on studying closures. He carefully read the entire &quot;Lambda: The Ultimate...&quot; series of papers and its cousins, and implemented a small Scheme interpreter with a closure-based object system. He learned much, and looked forward to informing his master of his progress.</p>
+<p>   On his next walk with Qc Na, Anton attempted to impress his master by saying &quot;Master, I have diligently studied the matter, and now understand that objects are truly a poor man&#39;s closures.&quot; Qc Na responded by hitting Anton with his stick, saying &quot;When will you learn? Closures are a poor man&#39;s object.&quot; At that moment, Anton became enlightened.</p>
+</blockquote>
+<p>If you&#39;ve been reading the Mithril <a href="http://lhorie.github.io/mithril/getting-started.html">guide</a> or following the blog, you might be used to seeing controllers that look like this:</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    this.name = m.prop(&quot;My Project&quot;);
+    this.save = function() {
+        Project.save({name: this.name()});
+    }
+};
+</code></pre>
+<p>This code takes advantage of the dynamic scoping of the <code>this</code> keyword in order to aggregate data. When the <code>ProjectDetailsCtrl</code> function is used as a constructor, we then get an object that has a <code>name</code> and a <code>description</code> - basically a class instance. And just like you would expect, this class exposes public properties:</p>
+<pre><code class="lang-javascript">var controller = new ProjectDetailsCtrl();
+console.log(controller.name()); // logs &quot;My Project&quot; because name is a public property
+</code></pre>
+<h3 id="what-about-private-properties-">What about private properties?</h3>
+<p>We can achieve privatization by using <em>closures</em>. If you don&#39;t know what a closure is, there are <a href="http://stackoverflow.com/questions/111102/how-do-javascript-closures-work">plenty of great explanations on the web</a>, but in a nutshell, a closure happens when a function accesses a variable from outside of its own scope.</p>
+<p>Here&#39;s a modification of the example above that makes the <code>name</code> private:</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    var name = m.prop(&quot;My Project&quot;);
+    this.save = function() {
+        Project.save({name: name()}); // `name` can be used internally, but not accessed from outside the class
+    }
+};
+</code></pre>
+<p>A somewhat obscure feature of Javascript is that functions that return objects will use the returned value as the instatiated object if those functions are called with the <code>new</code> keyword.</p>
+<p>In other words, instead of attaching public properties to <code>this</code>, we can actually attach them to an object and return that instead.</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    var name = m.prop(&quot;My Project&quot;);
+    var save = function() {
+        Project.save({name: name()});
+    }
+
+    return {name: name, save: save};
+};
+
+var controller = new ProjectDetailsCtrl();
+console.log(controller.name()); // logs &quot;My Project&quot; because `name` is a public property
+</code></pre>
+<p>As you can see, we just re-implemented the publicness of the original class without using the <code>this</code> keyword. This may seem like a silly exercise, but implementing our class this way has some interesting properties.</p>
+<p>What we&#39;re doing now is aggregate <code>name</code> and <code>save</code> using <strong>lexical scoping</strong>, instead of dynamic scoping. What this means is that the integrity of a class constructed this way cannot be broken dynamically. Consider this simple Mithril template:</p>
+<pre><code class="lang-javascript">var projectDetailsTpl = function(ctrl) {
+    return m(&quot;a&quot;, {onclick: ctrl.save}, &quot;Save project&quot;);
+}
+</code></pre>
+<p>Here we assign the save function to an attribute, which might be called later via <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply"><code>Function::apply</code></a>. The problem is that we are not storing a reference to the controller object so the <code>apply</code> call inside the Mithril engine cannot restore the context of the function, making the <code>this</code> keyword point to something else when <code>save</code> runs.</p>
+<p>If our class relies on the <code>this</code> keyword to maintain its internal integrity, then we run into a problem. We need to <code>bind</code> the function in order to lock down the relationship between class properties.</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    this.name = m.prop(&quot;My Project&quot;);
+    this.save = function() {
+        Project.save({name: this.name()});
+    }.bind(this);
+};
+
+var projectDetailsTpl = function(ctrl) {
+    //without the `bind` above, `this.name` would not point to the correct thing when `ctrl.save` runs as an event handler 
+    //with `bind`, everything works as expected
+    return m(&quot;a&quot;, {onclick: ctrl.save}, &quot;Save project&quot;);
+}
+</code></pre>
+<p>When we use closure-based classes, none of this is a problem, and no <code>bind</code> calls are required.</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    var name = m.prop(&quot;My Project&quot;);
+    var save = function() {
+        Project.save({name: name()});
+    };
+
+    return {name: name, save: save}
+};
+var projectDetailsTpl = function(ctrl) {
+    //no `bind` shenanigans needed to make this event handler work correctly
+    return m(&quot;a&quot;, {onclick: ctrl.save}, &quot;Save project&quot;);
+};
+</code></pre>
+<p>But here&#39;s where Qc Na slaps us in the wrist. &quot;Closures are a poor man&#39;s object!&quot;</p>
+<h3 id="enlightenment">Enlightenment</h3>
+<p>Recall what I said about closure-based classes: using closures to maintain the integrity of a class makes it immune to dynamic changes. This means that when we use closures, we lose the ability to dynamically mix different code into contexts. </p>
+<p>To illustrate, look at this snippet:</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    GoogleAnalyticsCtrl.call(this)
+
+    this.name = m.prop(&quot;My Project&quot;);
+    this.save = function() {
+        Project.save({name: this.name()});
+    }
+}
+
+var GoogleAnalyticsCtrl = function() {
+    this.name = m.prop(&quot;default&quot;);
+    this.track = function() {
+        console.log(&quot;tracked &quot; + this.name());
+    }
+}
+
+var controller = new ProjectDetailsCtrl();
+controller.track(); // logs &quot;tracked My Project&quot;
+</code></pre>
+<p>Notice how we can override <code>GoogleAnalyticsCtrl</code>&#39;s <code>name</code> and then use the new <code>name</code> from <code>track</code>. We&#39;ve effectively implemented <em>class inheritance</em>.</p>
+<p>With closure-based classes, this cross-polination between the two classes does not work:</p>
+<pre><code class="lang-javascript">var ProjectDetailsCtrl = function() {
+    GoogleAnalyticsCtrl.call(this)
+
+    var name = m.prop(&quot;My Project&quot;);
+    var save = function() {
+        Project.save({name: name()});
+    }
+
+    return {name: name, save: save}; //does not have `track` method
+}
+
+var GoogleAnalyticsCtrl = function() {
+    var name = m.prop(&quot;default&quot;);
+    var track = function() {
+        console.log(&quot;tracked &quot; + name()); //`track` does not use overridden `name`
+    }
+
+    return {name: name, track: track};
+}
+
+var controller = new ProjectDetailsCtrl();
+controller.track(); // error
+</code></pre>
+<h3 id="conclusion">Conclusion</h3>
+<p>Just remember that classes don&#39;t truly exist in Javascript. What we are really doing is choosing between using two different features to <em>emulate</em> classes. The closure-based approach is useful to group features in a controlled and locked down manner, and the <code>this</code>-based approach is useful to make the grouping flexible.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="prototypes-closures-and-the-zen-of-javascript-oop.html">Prototypes, closures and the zen of javascript OOP</a></li>
+								<li><a href="integrating-mithril-and-requirejs.html">Integrating Mithril and RequireJS</a></li>
+								<li><a href="just-what-the-doctor-prescribed.html">Just what the doctor prescribed</a></li>
+								<li><a href="asymmetrical-data-bindings.html">Asymmetrical data bindings</a></li>
+								<li><a href="whats-in-a-namespace.html">What's in a namespace</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

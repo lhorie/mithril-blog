@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/integrating-mithril-and-requirejs.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/prototypes-closures-and-the-zen-of-javascript-oop.md"], dest: "feed.xml"}]
 			}
 		}
 	});
