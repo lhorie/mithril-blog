@@ -31,7 +31,7 @@ PlayerList.insert({name: "Bob", score: 0})
 PlayerList.insert({name: "Mary", score: 0})
 ```
 
-Hopefully, those commands should be self-explanatory: we created a collection called `players` and populated it with 3 entries. What might not be so obvious, though, is that these entries have been saved to the database on our server. Obviously, in a real application, being able to arbitrarily write to the database from the browser command-line is a big no-no, and Meteor does let us lock down this ability in production mode. We were only able to do this here because of Meteor's developer friendliness features that are available in development mode.
+Hopefully, those commands should be self-explanatory: we created a collection called `players` and populated it with 3 entries. What might not be so obvious, though, is that these entries have been saved to the database on our server. Obviously, in a real application, being able to arbitrarily write to the database from the browser command-line is a big no-no, and Meteor does let us lock down this ability.
 
 We can also query the collection to ensure our data is really there. Type this in the browser's console:
 

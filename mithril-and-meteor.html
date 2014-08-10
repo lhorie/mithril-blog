@@ -37,7 +37,7 @@ PlayerList.insert({name: &quot;John&quot;, score: 0})
 PlayerList.insert({name: &quot;Bob&quot;, score: 0})
 PlayerList.insert({name: &quot;Mary&quot;, score: 0})
 </code></pre>
-<p>Hopefully, those commands should be self-explanatory: we created a collection called <code>players</code> and populated it with 3 entries. What might not be so obvious, though, is that these entries have been saved to the database on our server. Obviously, in a real application, being able to arbitrarily write to the database from the browser command-line is a big no-no, and Meteor does let us lock down this ability in production mode. We were only able to do this here because of Meteor&#39;s developer friendliness features that are available in development mode.</p>
+<p>Hopefully, those commands should be self-explanatory: we created a collection called <code>players</code> and populated it with 3 entries. What might not be so obvious, though, is that these entries have been saved to the database on our server. Obviously, in a real application, being able to arbitrarily write to the database from the browser command-line is a big no-no, and Meteor does let us lock down this ability.</p>
 <p>We can also query the collection to ensure our data is really there. Type this in the browser&#39;s console:</p>
 <pre><code class="lang-javascript">PlayerList.find().fetch()
 </code></pre>
