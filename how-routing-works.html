@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="how-routing-works">How routing works</h2>
+<p>Traditional routing is something most people understand fairly well: you click on a link, it takes you to another page. This new page has a different URL and it looks different from the one you were on.</p>
+<p>Routing in single page applications (SPAs) aims to do exactly the same thing, but with one difference: the page doesn&#39;t actually reload from scratch. Writing applications in this way has a few benefits: for example, you don&#39;t need to re-request and parse the same stylesheets and javascript resources every time a new page loads. Another benefit is that the data-on-the-wire architecture that is usually used with single-page apps lessens the load on the server, since it makes clients responsible for template rendering.</p>
+<p>In this article, we&#39;ll see how routing actually works under the hood.</p>
+<h3 id="a-little-history">A little history</h3>
+<p>In the early days, emulating the act of navigating from one page to another in single-page apps used to be tricky: developers needed to remember to update the URL every time a new permalinkable state was required, and they needed to ensure their systems were back-button aware, so that clicking the back and forward buttons on the browser would not break. Arriving at any given URL via a bookmark also needed to restore the application state to the same place as if the user had navigated to that URL by clicking around.</p>
+<p>Historically, the only way to get permalinkable, back-button-aware URLs that could be changed programmatically via javascript was to use <code>location.hash</code>. The hash, as the name implies, is what appears after the <code>#</code> symbol in a URL. It was originally designed for <strong>named anchors</strong>, a &quot;bookmarking&quot; feature that allowed users to quickly arrive at a desired section within a long document. Single page app routing frameworks hijacked this feature and made it isomorphic to the link-following scheme that we are all familiar with.</p>
+<p>Single page app URLs then started to look similar to this:</p>
+<pre><code>http://foo.com/#/books/edit/1
+</code></pre><p>HTML5 eventually brought another feature to javascript, called <strong>push state</strong>, to help make SPA URLs look more like traditional page URLs. It allows developers to write new browser history entries programmatically via javascript and rewrite the path of the current URL, so it became possible to route to URLs like this:</p>
+<pre><code>http://foo.com/books/edit/1
+</code></pre><p>There is, however, one major caveat with this new API: it only rewrites the URL as the user sees it, but it cannot affect what a server returns if a user were to navigate to that URL using the browser address bar directly (thus bypassing the javascript code), or if the user were to arrive from an external site. So, in order to take full advantage of this API, extra server-side code to support state management is required.</p>
+<h3 id="how-it-all-comes-together">How it all comes together</h3>
+<p>Mithril supports three routing modes: <code>search</code>, <code>hash</code> and <code>pathname</code>. All of these take advantage of the <code>pushState</code> API for browsers that support it (which, nowadays include <a href="http://caniuse.com/#search=pushstate">most browsers except older versions of Internet Explorer</a>), so whenever we change routes with Mithril, the framework simply calls <code>pushState</code> to rewrite the URL and add a new entry in the browser history.</p>
+<p>Here&#39;s a trivial example.</p>
+<pre><code class="lang-javascript">//use default mode
+m.route.mode = &quot;search&quot;
+
+m.route(document.body, &quot;/page1&quot;, {
+    &quot;/page1&quot;: {
+        controller: function() {}, 
+        view: function() {
+            return m(&quot;a[href=&#39;/page2&#39;]&quot;, {config: m.route}, &quot;go to page 2&quot;)
+        }
+    },
+    &quot;/page2&quot;: {
+        controller: function() {}, 
+        view: function() {
+            return m(&quot;a[href=&#39;/page1&#39;]&quot;, {config: m.route}, &quot;go to page 1&quot;)
+        }
+    }
+})
+</code></pre>
+<p>The code above defines two routes: <code>/page1</code> and <code>/page2</code>. If this code was running from <code>http://localhost</code>, Mithril would detect that <code>http://localhost</code> does not match any of the routes we defined, and would use <code>pushState</code> to change the URL to <code>http://localhost/?/page1</code>, which would then load the corresponding module.</p>
+<p>Note that the new URL has a <code>?</code> in it. This is because we&#39;re using the default routing mode: <code>search</code> (as in <code>location.search</code>). If the routing mode was set to <code>hash</code> before calling <code>m.route</code>, the new URL would be <code>http://localhost/#/page1</code>. Finally, if the routing mode was <code>pathname</code>, the new URL would be <code>http://localhost/page1</code></p>
+<p>As I mentioned before, the URL change happens thanks to <code>pushState</code>, but it is possible to bypass this API by typing a URL directly in the browser&#39;s address bar, and it&#39;s also possible that a user is using a browser that does not support <code>pushState</code> altogether. What happens in those cases?</p>
+<p>Well, if the routing mode is set to <code>hash</code>, then we fall back to the original behavior of <code>location.hash</code>, which happens to be the same as if we were using <code>pushState</code>. If the routing mode is set to <code>search</code>, then we fall back to simply reloading the page with a new querystring. This works by relying on the assumption that loading the same base URL (i.e. <code>http://localhost</code>) will return the same thing regardless of what the querystring looks like. This assumption is usually safe because, in the context of a single page app, this base URL usually points to a static file.</p>
+<p>If the routing mode is set to <code>pathname</code>, then the caveats of rewritten URLs apply: both reloading the page from scratch and the fallback when <code>pushState</code> is not available will attempt to load the new URL (<code>http://localhost/page1</code>), which in most common server configurations will attempt to load a different resource than <code>http://localhost</code>. In this case, the developer must reconfigure the server to return the same resource for all relevant URLs.</p>
+<p>Typically to reconfigure the server, a developer would make all paths return the same thing, unless they referred to resources within a special folder. This allows CSS, Javascript and images to load as expected, while allowing the application to be <code>pushState</code>-friendly. In PHP, one would use ModRewrite, in NodeJS, one would use a framework&#39;s routing system, and so on.</p>
+<hr>
+<p>So if <code>hash</code> mode is the only one that never causes unexpected full-page reloads, and it doesn&#39;t rely on server configuration assumptions, why is Mithril&#39;s default routing mode <code>search</code> (i.e. querystring)?</p>
+<p>If you recall, <code>hash</code> actually did serve a purpose before single page applications. If we hijack that feature in order to implement routing, it&#39;s no longer possible to use it to create named anchors. With that in mind, <code>search</code> mode is actually richer because it allows us do things like create back-to-top links and point to specific FAQs in long pages, and we don&#39;t need <a href="https://docs.angularjs.org/api/ng/service/$anchorScroll">hacky workarounds</a> to be able to do these things. The non-<code>pushState</code> fallback is less efficient, but it&#39;s still functional and browsers without support for it are becoming less relevant as time goes on anyways.</p>
+<p>Regardless, Mithril gives us another handy tool: giving a link an attribute <code>{config: m.route}</code> - as we did to the links in the example above - allows us to write mode-agnostic URLs in the <code>href</code> of the link. So the link <code>m(&quot;a[href=&#39;/page2&#39;]&quot;, {config: m.route}, &quot;go to page 2&quot;)</code> goes to the correct route regardless of what routing mode we use. There&#39;s no need to search and replace <code>#</code> or <code>?</code> symbols all over the codebase if we decide to change from one routing mode to another.</p>
+<p>Now that you know the pros and cons of each routing mode, all you need to do is change <code>m.route.mode</code> to what suits your needs.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="how-routing-works.html">How routing works</a></li>
+								<li><a href="mithril-and-meteor.html">Mithril and Meteor</a></li>
+								<li><a href="prototypes-closures-and-the-zen-of-javascript-oop.html">Prototypes, closures and the zen of javascript OOP</a></li>
+								<li><a href="integrating-mithril-and-requirejs.html">Integrating Mithril and RequireJS</a></li>
+								<li><a href="just-what-the-doctor-prescribed.html">Just what the doctor prescribed</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

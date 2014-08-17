@@ -1,5 +1,6 @@
 ## Articles
 
+- [How routing works](how-routing-works.html) - August 17, 2014
 - [Mithril and Meteor](mithril-and-meteor.html) - August 10, 2014
 - [Prototypes, closures and the zen of javascript OOP](prototypes-closures-and-the-zen-of-javascript-oop.html) - August 3, 2014
 - [Integrating Mithril and RequireJS](integrating-mithril-and-requirejs.html) - July 27, 2014
