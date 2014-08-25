@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/how-routing-works.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/vanilla-table-sorting.md"], dest: "feed.xml"}]
 			}
 		}
 	});
