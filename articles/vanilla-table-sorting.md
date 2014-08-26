@@ -43,8 +43,8 @@ Here's how one would use the helper to make the table sortable:
 var MyCtrl = function() {
 	this.list = [{name: "John", age: 32}, {name: "Mary", age: 25}, {name: "Bob", age: 47}]
 }
-var myView = function() {
-	m("table", sorts(ctrl.list), [
+var myView = function(ctrl) {
+	return m("table", sorts(ctrl.list), [
 		m("tr", [
 			m("th[data-sort-by=name]", "Name"),
 			m("th[data-sort-by=age]", "Age")
