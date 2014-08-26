@@ -25,8 +25,8 @@ Let's suppose we have a table with some data:
 var MyCtrl = function() {
 	this.list = [{name: "John", age: 32}, {name: "Mary", age: 25}, {name: "Bob", age: 47}]
 }
-var myView = function() {
-	m("table", [
+var myView = function(ctrl) {
+	return m("table", [
 		ctrl.list.map(function(person) {
 			return m("tr", [
 				m("td", person.name),

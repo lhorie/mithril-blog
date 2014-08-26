@@ -29,8 +29,8 @@
 <pre><code class="lang-javascript">var MyCtrl = function() {
     this.list = [{name: &quot;John&quot;, age: 32}, {name: &quot;Mary&quot;, age: 25}, {name: &quot;Bob&quot;, age: 47}]
 }
-var myView = function() {
-    m(&quot;table&quot;, [
+var myView = function(ctrl) {
+    return m(&quot;table&quot;, [
         ctrl.list.map(function(person) {
             return m(&quot;tr&quot;, [
                 m(&quot;td&quot;, person.name),
