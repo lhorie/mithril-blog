@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="wait-for-it">Wait for it</h2>
+<p>Here&#39;s a relatively common question that I hear from newcomers: &quot;How do I show a loading icon?&quot;</p>
+<p>In this article, we&#39;ll look at a couple of ways to do just that.</p>
+<p>Let&#39;s imagine we have a module that displays a list of things.</p>
+<pre><code class="lang-javascript">var MyController = function() {
+    this.things = requestWithFeedback({method: &quot;GET&quot;, url: &quot;/things&quot;})
+}
+var myView = function(ctrl) {
+    return [
+        m(&quot;ul&quot;, [
+            ctrl.things.data().map(function(thing) {
+                return m(&quot;li&quot;, thing.name)
+            })
+        ])
+    ]
+}
+</code></pre>
+<p>First, we&#39;ll create a template for our loading icon:</p>
+<pre><code class="lang-javascript">var loaderView = function() {
+    return m(&quot;img.loader[src=loading.gif]&quot;, {style: {display: &quot;none&quot;}})
+}
+</code></pre>
+<p>We can now easily adding this icon wherever we want in our main template:</p>
+<pre><code class="lang-javascript">var MyController = function() {
+    this.things = requestWithFeedback({method: &quot;GET&quot;, url: &quot;/things&quot;})
+}
+var myView = function(ctrl) {
+    return [
+        loaderView(),
+        m(&quot;ul&quot;, [
+            ctrl.things.data().map(function(thing) {
+                return m(&quot;li&quot;, thing.name)
+            })
+        ])
+    ]
+}
+</code></pre>
+<p>Next, we&#39;ll create a helper function to wrap around <code>m.request</code>:</p>
+<pre><code class="lang-javascript">function requestWithFeedback(args) {
+    return m.request(args)
+}
+</code></pre>
+<p>This helper doesn&#39;t do much right now, but the important point is that it has the same signature as m.request both in terms of the arguments it expects, and the value that is returned. This means that if we have a big codebase already written, it&#39;s trivial to replace any calls to <code>m.request</code> with <code>requestWithFeedback</code>.</p>
+<p>We can then extend <code>requestWithFeedback</code> so that it toggles the display of any icons that we define via <code>loaderView</code>.</p>
+<pre><code class="lang-javascript">var requestWithFeedback = function(args) {
+    var loaders = document.querySelectorAll(&quot;.loader&quot;)
+    //show icons
+    for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;block&quot;
+
+    return m.request(args).then(complete, complete).then(function() {
+        //hide icons
+        for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;none&quot;
+    })
+}
+</code></pre>
+<p>And that&#39;s it. A simple bare bones loader icon.</p>
+<hr>
+<h3 id="a-few-last-notes">A few last notes</h3>
+<p>It may seem strange to manipulate DOM from a method that is typically called from the model layer, but typically we never do anything other than show and hide loader icons, so poking at them without using Mithril&#39;s redrawing system is usually safe (and more performant).</p>
+<p>There are a variety of improvements that can be done to this code. For example, we can combine it with the cache object from the <a href="piggybacking-requests-in-a-widgety-world.html">request piggybacking technique</a> if there are multiple parallel requests and we want want the loaders to stay visible until all of them finish:</p>
+<pre><code class="lang-javascript">var requestWithFeedback = function(args) {
+    var key = JSON.stringify(args)
+    if (!requestWithFeedback.cache[key]) {
+        //show icons
+        for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;block&quot;
+
+        var expire = function(data) {
+            delete requestWithFeedback.cache[key]
+
+            if (Object.keys(requestWithFeedback.cache).length == 0) {
+                //hide icons
+                for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;none&quot;
+            }
+
+            return data
+        }
+        requestWithFeedback.cache[key] = m.request(args).then(expire, expire)
+    }
+    return requestWithFeedback.cache[key]
+}
+requestWithFeedback.cache = {}
+</code></pre>
+<p>There are various other ways that you can customize a loader icon: you could have it be a translucent overlay that covers the page, or you could animate it. I&#39;ll leave the stylistic aspect as an exercise to the reader.</p>
+<p>Just remember that loader icons are simply indicators to show that an application is doing something expensive, and not a &quot;free out-of-jail card&quot;. You should, of course, still make an effort to architecture your application in such a way that doesn&#39;t require multiple requests per user action (especially if one request depends on the results of another), and avoid doing silly things like reading entire SQL tables into server memory and filtering the dataset with application code (as opposed to, you know, using the proper SQL statements to pull the correct data in the first place).</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="wait-for-it.html">Wait for it</a></li>
+								<li><a href="vanilla-table-sorting.html">Vanilla table sorting</a></li>
+								<li><a href="how-routing-works.html">How routing works</a></li>
+								<li><a href="mithril-and-meteor.html">Mithril and Meteor</a></li>
+								<li><a href="prototypes-closures-and-the-zen-of-javascript-oop.html">Prototypes, closures and the zen of javascript OOP</a></li>
+								<li><a href="integrating-mithril-and-requirejs.html">Integrating Mithril and RequireJS</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

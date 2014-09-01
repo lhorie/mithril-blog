@@ -1,5 +1,6 @@
 ## Articles
 
+- [Wait for it](wait-for-it.html) - August 31, 2014
 - [Vanilla table sorting](vanilla-table-sorting.html) - August 24, 2014
 - [How routing works](how-routing-works.html) - August 17, 2014
 - [Mithril and Meteor](mithril-and-meteor.html) - August 10, 2014
