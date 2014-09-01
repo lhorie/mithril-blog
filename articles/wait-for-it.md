@@ -65,7 +65,7 @@ var requestWithFeedback = function(args) {
 	//show icons
 	for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "block"
 	
-	return m.request(args).then(complete, complete).then(function() {
+	return m.request(args).then(function() {
 		//hide icons
 		for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "none"
 	})
