@@ -2,7 +2,7 @@
 
 Here's a relatively common question that I hear from newcomers: "How do I show a loading icon?"
 
-In this article, we'll look at a couple of ways to do just that.
+In this article, we'll look at one way to do just that.
 
 Let's imagine we have a module that displays a list of things.
 
