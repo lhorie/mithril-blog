@@ -68,7 +68,7 @@ var myView = function(ctrl) {
     //show icons
     for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;block&quot;
 
-    return m.request(args).then(complete, complete).then(function() {
+    return m.request(args).then(function() {
         //hide icons
         for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;none&quot;
     })
