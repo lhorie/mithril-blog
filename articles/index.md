@@ -1,5 +1,6 @@
 ## Articles
 
+- [Extending the view language](extending-the-view-language.html) - August 31, 2014
 - [Wait for it](wait-for-it.html) - August 31, 2014
 - [Vanilla table sorting](vanilla-table-sorting.html) - August 24, 2014
 - [How routing works](how-routing-works.html) - August 17, 2014

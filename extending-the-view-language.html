@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Mithril Blog</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="extending-the-view-language">Extending the view language</h2>
+<p>As you may know, <a href="http://lhorie.github.io/mithril">Mithril</a> is a pretty minimalist framework, which allows sugar functionality to be created by the community.</p>
+<p>A recurring mantra in Mithril is that if something is too noisy or repetitive, you can put the verbosity in a function and call that instead. Today we&#39;ll look at a somewhat surprising extension point, but one that is extremely powerful: wrapping around the <code>m</code> method.</p>
+<p>First let&#39;s create a basic wrapper:</p>
+<pre><code class="lang-javascript">var mx = function(selector, attrs, children) {
+    return m(selector, attrs, children)
+}
+</code></pre>
+<p>As you can see, this doesn&#39;t really do anything new. The key here, though, is that it allows us to programmatically edit the attributes before creating the virtual dom element via <code>m</code>.</p>
+<p>Let&#39;s create a simple collection of <em>attribute transformers</em>:</p>
+<pre><code class="lang-javascript">var customAttrs = {
+    cautions: function(callback) {
+        this.onclick = function(e) {
+            if (prompt(&quot;Are you sure?&quot;)) callback(e)
+        }
+    },
+    toggles: function(flag) {
+        if (!this.style) this.style = {}
+        this.style.display = flag ? &quot;block&quot; : &quot;none&quot;
+    }
+}
+</code></pre>
+<p>An attribute transformer is simply a method that is meant to be called on a attribute that modifies it. In the example above, <code>cautions</code> adds an <code>onclick</code> handler that prompts the user before running a callback. <code>toggles</code> shows or hides an element based on a flag.</p>
+<p>We can now extend <code>mx</code> to tap into our collection:</p>
+<pre><code class="lang-javascript">var mx = function(selector, attrs, children) {
+    for (var attrName in attrs) {
+        if (customAttrs[attrName]) customAttrs[name].call(attrs, attrs[attrName]) 
+    }
+    return m(selector, attrs, children)
+}
+</code></pre>
+<p>What we&#39;re doing in the code above is look for attribute names that exist in the <code>customAttrs</code> dictionary. If one does, we call that function using the <code>attrs</code> object as the <code>this</code> object.</p>
+<p>Now we can easily bind our custom attribute transformers to a template:</p>
+<pre><code class="lang-javascript">var buttonVisible = m.prop(false)
+var myView = function() {
+    return [
+        m(&quot;a&quot;, {onclick: buttonVisible.bind(this, !buttonVisible())})
+        mx(&quot;button&quot;, {toggles: buttonVisible, cautions: ctrl.selfDestruct}, &quot;Press if evil plans are foiled&quot;)
+    ]
+}
+</code></pre>
+<p>In the code above, the button becomes visible when the <code>buttonVisible</code> getter-setter is set to true, and on click, it prompts the user to confirm that they do, in fact, want to call <code>selfDestruct</code>.</p>
+<hr>
+<h3 id="handling-conflicts">Handling conflicts</h3>
+<p>A clever reader might notice that this transformer suffers from one problem - it can clobber attributes. For example: </p>
+<pre><code>mx(&quot;button&quot;, {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, &quot;Remove&quot;)
+</code></pre><p>In the snippet above, <code>cautions</code> assigns a function to the <code>onclick</code> attribute, which means that <code>ctrl.doSomethingElse</code> does not run when we click on the button.</p>
+<p>Fortunately, javascript is a dynamic language, which allows us to use <strong>monkeypatching</strong> to easily solve this problem:</p>
+<pre><code class="lang-javascript">var monkeypatch = function(f1, f2) {
+    return function() {
+        var output1, output2
+        if (typeof f1 == &quot;function&quot;) output1 = f1.apply(this, arguments)
+        if (typeof f2 == &quot;function&quot;) output2 = f2.apply(this, arguments)
+
+        //make compatible w/ event handler `return false` behavior
+        return output1 === false || output2 === false ? false : undefined
+    }
+}
+var customAttrs = {
+    cautions: function(callback) {
+        this.onclick = monkeypatch(this.onclick, function(e) {
+            if (prompt(&quot;Are you sure?&quot;)) callback(e)
+        })
+    }
+}
+</code></pre>
+<p>This preserves an existing <code>onclick</code> if it already exists, so that if the new <code>onclick</code> gets called, both the existing <code>onclick</code> and the callback run one after the other. We can easily tweak the order of execution for event handlers by simply changing the order of the parameters, and we can even replace <code>monkeypatch</code> altogether with different helpers to achieve more advanced event handler coordination (e.g. preventing a handler from running based on the return value of another.)</p>
+<hr>
+<h3 id="conclusion">Conclusion</h3>
+<p>By wrapping around the <code>m</code> function, we are able to add custom functionality to templates using the same familiar syntax as regular HTML attributes.</p>
+<p>Not only can we mix and match different units of functionality in a single DOM element, but we can also maintain control over how they interact with each other, even in the hairiest scenarios.</p>
+<p><em>And this is only the beginning.</em> We saw that the <code>mx</code> wrapper we saw above only passes attributes to the list of transformers. But it&#39;s perfectly possible to expand this method and make it also introspect the <code>selector</code> parameter, as well as the virtual element that is returned from the wrapped <code>m</code> call, and even the children virtual elements, so we can create flexible transformers that act differently based on various criteria.</p>
+<p>Here&#39;s an example that makes a good exercise to the reader: bi-directional bindings. Try creating a transformer called <code>binds</code>, which can read and write to a <code>m.prop</code> getter-setter, and that can correctly attach itself to a virtual element, considering that you need to read the <code>value</code> attribute in text inputs, but you need to read the <code>checked</code> attribute for checkboxes and radio boxes, and so on.</p>
+<p>Or try writing one that replaces an empty child list with a &quot;there are no items&quot; text node. Or one that changes the output of the selector <code>a[href]</code>&#39;s into the equivalent of <code>[href=&quot;javascript:;&quot;]</code>. There&#39;s an endless amount of niceties that you can add to improve the developer ergonomics of the system.</p>
+<p>And we can use the same system to add non-trivial functionality. The fact that we can tap into Mithril&#39;s <code>config</code> attribute from transformers means that, in addition to being able to modify virtual elements on the fly, we can also wrap around 3rd-party library integration boilerplate while keeping the ability of managing element lifecycles. In other words, we can have complex widgets with nice syntax. <em>And</em> we can still mixin transformers. <em>And</em> we still have the ability to <a href="when-css-lets-you-down.html">introspect and edit</a> components after inclusion if needed.</p>
+<p>Before I leave you with this cool new technique, remember that with great power comes great responsibility. A wrapper&#39;s job is to hide complexity, and in this case there&#39;s two interfaces to consider: how we use the wrapper in templates and how easy it is to add transformers to the system. In addition, you also need to be aware of the cost of the wrapper&#39;s complexity itself. You are responsible for deciding how often your version of <code>mx</code> is called and how much &quot;magic&quot; that wrapper performs, given that the cost of the wrapper is multiplied by the number of times you call it.</p>
+<p>Generally speaking, the cost of a wrapper - even a complex one - is surprisingly negligible. (Fun fact: Mithril&#39;s templating engine is fast even though <code>m()</code> uses regular expressions!) However, calling a carelessly slow implementation of <code>mx</code> for every element in a page that has tens of thousands of elements is bound to cause problems. If push comes to shove, there <em>are</em> ways to get around performance problems of that nature, but it&#39;s always better to put some thought in the design phase than to fix mistakes in the maintenance phase.</p>
+<p>Anyways, I hope this article gives you some ideas on how to make your templates cleaner and your experience with Mithril templating even more pleasant.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="extending-the-view-language.html">Extending the view language</a></li>
+								<li><a href="wait-for-it.html">Wait for it</a></li>
+								<li><a href="vanilla-table-sorting.html">Vanilla table sorting</a></li>
+								<li><a href="how-routing-works.html">How routing works</a></li>
+								<li><a href="mithril-and-meteor.html">Mithril and Meteor</a></li>
+								<li><a href="prototypes-closures-and-the-zen-of-javascript-oop.html">Prototypes, closures and the zen of javascript OOP</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>

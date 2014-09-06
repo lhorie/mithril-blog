@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/wait-for-it.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/extending-the-view-language.md"], dest: "feed.xml"}]
 			}
 		}
 	});
