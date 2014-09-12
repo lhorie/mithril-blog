@@ -8,7 +8,7 @@ Let's imagine we have a module that displays a list of things.
 
 ```javascript
 var MyController = function() {
-	this.things = requestWithFeedback({method: "GET", url: "/things"})
+	this.things = m.request({method: "GET", url: "/things"})
 }
 var myView = function(ctrl) {
 	return [
@@ -33,7 +33,7 @@ We can now easily adding this icon wherever we want in our main template:
 
 ```javascript
 var MyController = function() {
-	this.things = requestWithFeedback({method: "GET", url: "/things"})
+	this.things = m.request({method: "GET", url: "/things"})
 }
 var myView = function(ctrl) {
 	return [
@@ -65,9 +65,11 @@ var requestWithFeedback = function(args) {
 	//show icons
 	for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "block"
 	
-	return m.request(args).then(function() {
+	return m.request(args).then(function(value) {
 		//hide icons
 		for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "none"
+		
+		return value
 	})
 }
 ```
@@ -109,3 +111,25 @@ requestWithFeedback.cache = {}
 There are various other ways that you can customize a loader icon: you could have it be a translucent overlay that covers the page, or you could animate it. I'll leave the stylistic aspect as an exercise to the reader.
 
 Just remember that loader icons are simply indicators to show that an application is doing something expensive, and not a "free out-of-jail card". You should, of course, still make an effort to architecture your application in such a way that doesn't require multiple requests per user action (especially if one request depends on the results of another), and avoid doing silly things like reading entire SQL tables into server memory and filtering the dataset with application code (as opposed to, you know, using the proper SQL statements to pull the correct data in the first place).
+
+---
+
+**Update:** Thanks to Lawrence Dol for pointing out an omission from part. There's one more scenario that wasn't covered in this article. By default, Mithril waits for requests to complete before attempting to render, so if we defined our loading icon within a Mithril template, it never displays a loading icon on initial page load. In order to show an icon before Mithril renders in the first place, a simple solution is to simply put the icon in the HTML root element that we use for `m.module` or `m.route`:
+
+```markup
+<html>
+	<head></head>
+	<body>
+		<!--the loading icon-->
+		<img src="loading.gif" />
+		
+		<script>
+		//define the app
+		var app = ...
+		
+		//initialize the app
+		m.module(document.body, app)
+		</script>
+	</body>
+</html>
+```

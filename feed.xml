@@ -98,7 +98,7 @@ var customAttrs = {
 <p>In this article, we&#39;ll look at one way to do just that.</p>
 <p>Let&#39;s imagine we have a module that displays a list of things.</p>
 <pre><code class="lang-javascript">var MyController = function() {
-    this.things = requestWithFeedback({method: &quot;GET&quot;, url: &quot;/things&quot;})
+    this.things = m.request({method: &quot;GET&quot;, url: &quot;/things&quot;})
 }
 var myView = function(ctrl) {
     return [
@@ -117,7 +117,7 @@ var myView = function(ctrl) {
 </code></pre>
 <p>We can now easily adding this icon wherever we want in our main template:</p>
 <pre><code class="lang-javascript">var MyController = function() {
-    this.things = requestWithFeedback({method: &quot;GET&quot;, url: &quot;/things&quot;})
+    this.things = m.request({method: &quot;GET&quot;, url: &quot;/things&quot;})
 }
 var myView = function(ctrl) {
     return [
@@ -142,10 +142,12 @@ var myView = function(ctrl) {
     //show icons
     for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;block&quot;
 
-    return m.request(args).then(function() {
-        //hide icons
-        for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = &quot;none&quot;
-    })
+	return m.request(args).then(function(value) {
+		//hide icons
+		for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "none"
+		
+		return value
+	})
 }
 </code></pre>
 <p>And that&#39;s it. A simple bare bones loader icon.</p>
@@ -177,6 +179,24 @@ requestWithFeedback.cache = {}
 </code></pre>
 <p>There are various other ways that you can customize a loader icon: you could have it be a translucent overlay that covers the page, or you could animate it. I&#39;ll leave the stylistic aspect as an exercise to the reader.</p>
 <p>Just remember that loader icons are simply indicators to show that an application is doing something expensive, and not a &quot;free out-of-jail card&quot;. You should, of course, still make an effort to architecture your application in such a way that doesn&#39;t require multiple requests per user action (especially if one request depends on the results of another), and avoid doing silly things like reading entire SQL tables into server memory and filtering the dataset with application code (as opposed to, you know, using the proper SQL statements to pull the correct data in the first place).</p>
+<hr>
+<p><strong>Update:</strong> Thanks to Lawrence Dol for pointing out an omission from part. There&#39;s one more scenario that wasn&#39;t covered in this article. By default, Mithril waits for requests to complete before attempting to render, so if we defined our loading icon within a Mithril template, it never displays a loading icon on initial page load. In order to show an icon before Mithril renders in the first place, a simple solution is to simply put the icon in the HTML root element that we use for <code>m.module</code> or <code>m.route</code>:</p>
+<pre><code class="lang-markup">&lt;html&gt;
+    &lt;head&gt;&lt;/head&gt;
+    &lt;body&gt;
+        &lt;!--the loading icon--&gt;
+        &lt;img src=&quot;loading.gif&quot; /&gt;
+
+        &lt;script&gt;
+        //define the app
+        var app = ...
+
+        //initialize the app
+        m.module(document.body, app)
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
 
 			]]></description>
 		</item>
