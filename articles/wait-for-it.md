@@ -4,24 +4,34 @@ Here's a relatively common question that I hear from newcomers: "How do I show a
 
 In this article, we'll look at one way to do just that.
 
-Let's imagine we have a module that displays a list of things.
+Let's imagine we have a module that displays a list of asynchronously loaded things when we click on a button.
 
 ```javascript
 var MyController = function() {
-	this.things = m.request({method: "GET", url: "/things"})
+	this.showThings = function() {
+		this.things = m.request({method: "GET", url: "/things"})
+	}.bind(this)
 }
 var myView = function(ctrl) {
 	return [
-		m("ul", [
-			ctrl.things.data().map(function(thing) {
+		m("button[type=button]", {onclick: ctrl.showThings}, "Show things"),
+		
+		ctrl.things ? m("ul", [
+			ctrl.things().map(function(thing) {
 				return m("li", thing.name)
 			})
-		])
+		]) : ""
 	]
 }
+
+m.module(document.body, {controller: MyController, view: myView})
 ```
 
-First, we'll create a template for our loading icon:
+The code above starts by showing only a button, and when that button is clicked, a list of things shows up.
+
+---
+
+First, let's create a template for our loading icon:
 
 ```javascript
 var loaderView = function() {
@@ -29,22 +39,29 @@ var loaderView = function() {
 }
 ```
 
-We can now easily adding this icon wherever we want in our main template:
+We can now easily add this icon wherever we want in our main template:
 
 ```javascript
 var MyController = function() {
-	this.things = m.request({method: "GET", url: "/things"})
+	this.showThings = function() {
+		this.things = m.request({method: "GET", url: "/things"})
+	}.bind(this)
 }
 var myView = function(ctrl) {
 	return [
-		loaderView(),
-		m("ul", [
-			ctrl.things.data().map(function(thing) {
+		m("button[type=button]", {onclick: ctrl.showThings}, "Show things"),
+		
+		loaderView(), //add icon here
+		
+		ctrl.things ? m("ul", [
+			ctrl.things().map(function(thing) {
 				return m("li", thing.name)
 			})
-		])
+		]) : ""
 	]
 }
+
+m.module(document.body, {controller: MyController, view: myView})
 ```
 
 Next, we'll create a helper function to wrap around `m.request`:
@@ -61,7 +78,9 @@ We can then extend `requestWithFeedback` so that it toggles the display of any i
 
 ```javascript
 var requestWithFeedback = function(args) {
+	//query the DOM for loaders
 	var loaders = document.querySelectorAll(".loader")
+	
 	//show icons
 	for (var i = 0, loader; loader = loaders[i]; i++) loader.style.display = "block"
 	
@@ -73,6 +92,33 @@ var requestWithFeedback = function(args) {
 	})
 }
 ```
+
+Let's replace our `m.request` call with `requestWithFeedback`:
+
+```javascript
+var MyController = function() {
+	this.showThings = function() {
+		this.things = requestWithFeedback({method: "GET", url: "/things"})
+	}.bind(this)
+}
+var myView = function(ctrl) {
+	return [
+		m("button[type=button]", {onclick: ctrl.showThings}, "Show things"),
+		
+		loaderView(), //add icon here
+		
+		ctrl.things ? m("ul", [
+			ctrl.things().map(function(thing) {
+				return m("li", thing.name)
+			})
+		]) : ""
+	]
+}
+
+m.module(document.body, {controller: MyController, view: myView})
+```
+
+Here's what's happening: the initial page load draws only the button and a hidden loading icon because `ctrl.things` is undefined at that point. When we press the button, we use DOM manipulation to show the loading icon, and fire an AJAX request to fetch our data. Once the AJAX request completes, we use DOM manipulation again to hide the loading icon, and Mithril redraws the rest of the template to display the list of things.
 
 And that's it. A simple bare bones loader icon.
 
@@ -114,7 +160,9 @@ Just remember that loader icons are simply indicators to show that an applicatio
 
 ---
 
-**Update:** Thanks to Lawrence Dol for pointing out an omission from part. There's one more scenario that wasn't covered in this article. By default, Mithril waits for requests to complete before attempting to render, so if we defined our loading icon within a Mithril template, it never displays a loading icon on initial page load. In order to show an icon before Mithril renders in the first place, a simple solution is to simply put the icon in the HTML root element that we use for `m.module` or `m.route`:
+**Update:** Thanks to Lawrence Dol for pointing out some problems with the original article. I've updated it to correct these issues.
+
+By default, Mithril waits for requests to complete before attempting to render, so if we defined our loading icon within a Mithril template, it never displays a loading icon for the initial page load. In order to show an icon before Mithril renders in the first place, a simple solution is to simply put the icon in the HTML root element that we use for `m.module` or `m.route`:
 
 ```markup
 <html>
@@ -133,3 +181,28 @@ Just remember that loader icons are simply indicators to show that an applicatio
 	</body>
 </html>
 ```
+
+An alternative is to use the `background` option when calling m.request to indicate that we want to redraw the rest of the template without waiting for the asynchronous data, and then manually triggering a redraw when the AJAX request completes:
+
+```javascript
+var MyController = function() {
+	this.things = m.request({method: "GET", url: "/things", background: true})
+		.then(function() {
+			m.redraw()
+		})
+}
+var myView = function(ctrl) {
+	return [
+		loaderView(),
+		m("ul", [
+			ctrl.things().map(function(thing) {
+				return m("li", thing.name)
+			})
+		])
+	]
+}
+
+m.module(document.body, {controller: MyController, view: myView})
+```
+
+The second option lets us draw more than just a loading icon during page load, but you should take care to ensure that your template doesn't try to access data that might not be there yet on the initial draw.
