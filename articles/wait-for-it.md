@@ -147,7 +147,10 @@ var requestWithFeedback = function(args) {
 			
 			return data
 		}
-		requestWithFeedback.cache[key] = m.request(args).then(expire, expire)
+		requestWithFeedback.cache[key] = m.request(args).then(expire, function(error) {
+			expire(error)
+			throw error
+		})
 	}
 	return requestWithFeedback.cache[key]
 }

@@ -436,7 +436,10 @@ m.module(document.body, {controller: MyController, view: myView})
 
             return data
         }
-        requestWithFeedback.cache[key] = m.request(args).then(expire, expire)
+        requestWithFeedback.cache[key] = m.request(args).then(expire, function(error) {
+            expire(error)
+            throw error
+        })
     }
     return requestWithFeedback.cache[key]
 }
@@ -484,7 +487,6 @@ var myView = function(ctrl) {
 m.module(document.body, {controller: MyController, view: myView})
 </code></pre>
 <p>The second option lets us draw more than just a loading icon during page load, but you should take care to ensure that your template doesn&#39;t try to access data that might not be there yet on the initial draw.</p>
-
 			]]></description>
 		</item>
 		<item>
