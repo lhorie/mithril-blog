@@ -49,12 +49,14 @@ var view = function(ctrl) {
     return m(&quot;ul&quot;, [
         people.map(function(person) {
             return m(&quot;li&quot;, {
+                key: person.id,
                 onclick: ctrl.remove.bind(this, person)
             }, person.name)
         })
     ])
 }
 </code></pre>
+<p>One thing to notice is that we added a <code>key</code> attribute to the <code>&lt;li&gt;</code>. This is usually good practice if you delete list items because it allows Mithril&#39;s virtual DOM diffing engine to be smarter about DOM reuse by providing referential metadata.</p>
 <p>Putting it all together:</p>
 <pre><code class="lang-javascript">//model
 var people = [
@@ -75,6 +77,7 @@ var view = function(ctrl) {
     return m(&quot;ul&quot;, [
         people.map(function(person) {
             return m(&quot;li&quot;, {
+                key: id,
                 onclick: ctrl.remove.bind(this, person)
             }, person.name)
         })
@@ -97,6 +100,7 @@ var view = function(ctrl) {
     return m(&quot;ul&quot;, [
         people.map(function(person) {
             return m(&quot;li&quot;, {
+                key: id,
                 onclick: ctrl.remove.bind(this, person),
                 config: fadesIn
             }, person.name)
@@ -139,6 +143,7 @@ var view = function(ctrl) {
     return m(&quot;ul&quot;, [
         people.map(function(person) {
             return m(&quot;li&quot;, {
+                key: id,
                 onclick: fadesOut(ctrl.remove.bind(this, person)),
                 config: fadesIn
             }, person.name)
@@ -166,6 +171,7 @@ var view = function(ctrl) {
     return m(&quot;ul&quot;, [
         people.map(function(person) {
             return m(&quot;li&quot;, {
+                key: person.id,
                 onclick: fadesOut(ctrl.remove.bind(this, person)),
                 config: fadesIn
             }, person.name)
