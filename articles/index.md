@@ -1,5 +1,6 @@
 ## Articles
 
+- [What is a View-Model](what-is-a-view-model.html) - September 21, 2014
 - [Velocity.js animations in Mithril](velocity-animations-in-mithril.html) - September 14, 2014
 - [Extending the view language](extending-the-view-language.html) - September 7, 2014
 - [Wait for it](wait-for-it.html) - August 31, 2014

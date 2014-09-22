@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/velocity-animations-in-mithril.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/what-is-a-view-model.md"], dest: "feed.xml"}]
 			}
 		}
 	});
