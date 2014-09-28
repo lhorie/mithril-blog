@@ -27,7 +27,7 @@
 <p>Mithril positions itself as a minimalist framework. Minimalism can be a slippery slope. It&#39;s easy to make a &quot;minimalist&quot; framework that defers all the hard work to the application developer, but the real goal of minimalism in the context of frameworks is to enable developers to simplify their own codebases <em>in addition</em> to being a simple framework. So let&#39;s see how Mithril fares.</p>
 <hr>
 <h3 id="the-model-layer">The model layer</h3>
-<p>Here&#39;s a <a href="http://jsfiddle.net/wktvxeey/">tit-for-tat port of the spreadsheet code to Mithril</a>.</p>
+<p>Here&#39;s a <a href="http://jsfiddle.net/wktvxeey/">port of the spreadsheet code to Mithril</a>.</p>
 <p>The <code>data</code> variable is the in-memory data store. It reads from <code>localStorage</code> on page load and it&#39;s used throughout the code to store the current state of the spreadsheet data. It&#39;s a map of values, whose keys are expect to be named after their cells (e.g. <code>data[&quot;a1&quot;]</code>, <code>data[&quot;b3&quot;]</code>, etc)</p>
 <pre><code class="lang-javascript">var data = JSON.parse(localStorage[&quot;spreadsheet&quot;] || &quot;{}&quot;)
 </code></pre>
