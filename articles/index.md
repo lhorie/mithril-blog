@@ -1,6 +1,6 @@
 ## Articles
 
-Here you will find articles about Mithril and web application development.
+Here you will find articles about cool things you can do with Mithril, and articles about related web application development topics.
 
 - [A spreadsheet in 60 lines of Javascript](a-spreadsheet-in-60-lines-of-javascript.html) - September 28, 2014
 - [What is a View-Model](what-is-a-view-model.html) - September 21, 2014
