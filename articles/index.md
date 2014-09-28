@@ -1,5 +1,8 @@
 ## Articles
 
+Here you will find articles about Mithril and web application development.
+
+- [A spreadsheet in 60 lines of Javascript](a-spreadsheet-in-60-lines-of-javascript.html) - September 28, 2014
 - [What is a View-Model](what-is-a-view-model.html) - September 21, 2014
 - [Velocity.js animations in Mithril](velocity-animations-in-mithril.html) - September 14, 2014
 - [Extending the view language](extending-the-view-language.html) - September 7, 2014
@@ -26,11 +29,3 @@
 - [Better templates with FP](better-templates-with-fp.html) - April 20, 2014
 - [Building a "Seinfeld" app](building-a-seinfeld-app.html) - April 13, 2014
 - [Giving Mithril a voice](giving-mithril-a-voice.html) - April 11, 2014
-
----
-
-Click on a link above to read an article.
-
-This is the blog for the [Mithril](http://lhorie.github.io/mithril) project. Here you will find articles about web application development, Mithril tutorials, and my general experience running this open source project.
-
-As you may have noticed, this is a pretty bare-bones blog. I may add more features as I go.
