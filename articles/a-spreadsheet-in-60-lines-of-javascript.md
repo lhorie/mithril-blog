@@ -1,5 +1,11 @@
 ## A spreadsheet in 60 lines of Javascript
 
+---
+
+Short on time? [See it in action here](http://jsfiddle.net/dnv352kn/show/)
+
+---
+
 Apps with terse code have a special place in my heart. Note that I said *terse*, not *clever*. Cleverness is a tendency to sacrifice code clarity and readability in order to push code size to be smaller (think code golfing). Being terse, on the other hand, is the practice of seeking simplicity in order to make code easier to understand. It implies looking for elegant solutions and avoiding over-engineering.
 
 One such app that looks particularly impressive is this [spreadsheet](http://jsfiddle.net/ondras/hYfN3/), written in a mere 30 lines of vanilla javascript.
