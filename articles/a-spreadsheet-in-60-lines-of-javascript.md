@@ -2,13 +2,13 @@
 
 ---
 
-Short on time? [See it in action here](http://jsfiddle.net/dnv352kn/show/)
+Short on time? [See it in action here](examples/spreadsheet-improved.html)
 
 ---
 
 Apps with terse code have a special place in my heart. Note that I said *terse*, not *clever*. Cleverness is a tendency to sacrifice code clarity and readability in order to push code size to be smaller (think code golfing). Being terse, on the other hand, is the practice of seeking simplicity in order to make code easier to understand. It implies looking for elegant solutions and avoiding over-engineering.
 
-One such app that looks particularly impressive is this [spreadsheet](http://jsfiddle.net/ondras/hYfN3/), written in a mere 30 lines of vanilla javascript.
+One such app that looks particularly impressive is this [spreadsheet](examples/spreadsheet.html), written in a mere 30 lines of vanilla javascript.
 
 I decided to write a version of it using [Mithril](http://lhorie.github.io/mithril). It may seem silly to require a framework (even if it's a really small one) to do something that has been proven to be doable without one, but the purpose of this exercise is precisely to get an idea of how much boilerplate would be required in order to implement the app using the Mithril framework.
 
@@ -33,7 +33,7 @@ Mithril positions itself as a minimalist framework. Minimalism can be a slippery
 
 ### The model layer
 
-Here's a [port of the spreadsheet code to Mithril](http://jsfiddle.net/wktvxeey/).
+Here's a [port of the spreadsheet code to Mithril](examples/spreadsheet-improved.html).
 
 The `data` variable is the in-memory data store. It reads from `localStorage` on page load and it's used throughout the code to store the current state of the spreadsheet data. It's a map of values, whose keys are expect to be named after their cells (e.g. `data["a1"]`, `data["b3"]`, etc)
 
