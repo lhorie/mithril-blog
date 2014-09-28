@@ -39,7 +39,7 @@ function grid(withCell) {
 		}
 		rows.push(m("tr", cols))
 	}
-	return m("table", rows)
+	return m("table", m("tbody", rows))
 }
 function view() {
 	return [
@@ -50,7 +50,7 @@ function view() {
 		grid(function(cellName) {
 			var value = compute(data[cellName]) || ""
 			return m("input", {
-				onkeypress: move,
+				onkeydown: move,
 				onfocus: cell.bind(this, cellName),
 				onchange: m.withAttr("value", update.bind(this, cellName)),
 				value: value,
@@ -70,7 +70,7 @@ function move(e) {
 function highlight(cell) {
 	cell.focus()
 	cell.selectionEnd = cell.value.length
-	return false
+	//return false
 }
 m.module(document.body, {controller: function() {}, view: view})
 </script>

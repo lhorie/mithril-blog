@@ -66,7 +66,7 @@ function grid(withCell) {
 		}
 		rows.push(m("tr", cols))
 	}
-	return m("table", rows)
+	return m("table", m("tbody", rows))
 }
 ```
 
