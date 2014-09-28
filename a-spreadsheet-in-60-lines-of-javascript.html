@@ -38,7 +38,7 @@
 <p>Mithril positions itself as a minimalist framework. Minimalism can be a slippery slope. It&#39;s easy to make a &quot;minimalist&quot; framework that defers all the hard work to the application developer, but the real goal of minimalism in the context of frameworks is to enable developers to simplify their own codebases <em>in addition</em> to being a simple framework. So let&#39;s see how Mithril fares.</p>
 <hr>
 <h3 id="the-model-layer">The model layer</h3>
-<p>Here&#39;s a <a href="">tit-for-tat port of the spreadsheet code to Mithril</a>.</p>
+<p>Here&#39;s a <a href="http://jsfiddle.net/wktvxeey/">tit-for-tat port of the spreadsheet code to Mithril</a>.</p>
 <p>The <code>data</code> variable is the in-memory data store. It reads from <code>localStorage</code> on page load and it&#39;s used throughout the code to store the current state of the spreadsheet data. It&#39;s a map of values, whose keys are expect to be named after their cells (e.g. <code>data[&quot;a1&quot;]</code>, <code>data[&quot;b3&quot;]</code>, etc)</p>
 <pre><code class="lang-javascript">var data = JSON.parse(localStorage[&quot;spreadsheet&quot;] || &quot;{}&quot;)
 </code></pre>
@@ -86,7 +86,7 @@
 <p>We saw that porting the vanilla app to Mithril yields very little boilerplate, while keeping code quite readable. But the real test for terseness is whether we can build more functionality on top of it: <em>clever</em> code is full of obscurities and it&#39;s hard to understand and modify, but <em>elegant</em> code should be easy to refactor.</p>
 <p>Conveniently, we can put our code to the test, because this spreadsheet app can use some improvements. As you might already know, the whole point of a spreadsheet is that they are supposed to be <em>reactive</em>. If the value of <code>a3</code> is <code>&quot;=a1+a2&quot;</code>, then changing the value of <code>a1</code> should also change <code>a3</code>.</p>
 <p>Currently our app simply overwrites the expression so once it&#39;s computed, we lose its formula.</p>
-<p>Here&#39;s a <a href="">rewrite that fixes that</a>.</p>
+<p>Here&#39;s a <a href="http://jsfiddle.net/dnv352kn/">rewrite that fixes that</a>.</p>
 <p>The first major change is that our <code>update</code> function is now broken out into three parts: </p>
 <ul>
 <li>the <code>update</code> function takes care of saving to the in-memory data store and to localStorage as before (but it no longer performs the evaluation of expressions)</li>
