@@ -178,7 +178,7 @@ function view() {
 		grid(function(cellName) {
 			var value = compute(data[cellName]) || ""
 			return m("input", {
-				onkeypress: move,
+				onkeydown: move,
 				onfocus: cell.bind(this, cellName),
 				onchange: m.withAttr("value", update.bind(this, cellName)),
 				value: value,
