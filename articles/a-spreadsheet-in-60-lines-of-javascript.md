@@ -33,7 +33,7 @@ Mithril positions itself as a minimalist framework. Minimalism can be a slippery
 
 ### The model layer
 
-Here's a [port of the spreadsheet code to Mithril](examples/spreadsheet-improved.html).
+Here's a [port of the spreadsheet code to Mithril](examples/spreadsheet.html).
 
 The `data` variable is the in-memory data store. It reads from `localStorage` on page load and it's used throughout the code to store the current state of the spreadsheet data. It's a map of values, whose keys are expect to be named after their cells (e.g. `data["a1"]`, `data["b3"]`, etc)
 
