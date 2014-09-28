@@ -115,7 +115,7 @@ The first major change is that our `update` function is now broken out into thre
 - the `compute` function takes care of the expression evaluation logic
 - and finally, the `computable` function is a **value object factory**. If the input to this function is a number or a string, it simply returns that value, but if the input is an `eval`able expression (i.e. a string beginning w/ `=` and followed by a javascript expression), it returns a String object with a custom `valueOf` method that computes its `eval`able expression when called.
 
-```
+```javascript
 function computable(value) {
 	var output = new String(value)
 	output.valueOf = compute.bind(this, value)

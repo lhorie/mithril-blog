@@ -96,7 +96,7 @@
 <li>the <code>compute</code> function takes care of the expression evaluation logic</li>
 <li>and finally, the <code>computable</code> function is a <strong>value object factory</strong>. If the input to this function is a number or a string, it simply returns that value, but if the input is an <code>eval</code>able expression (i.e. a string beginning w/ <code>=</code> and followed by a javascript expression), it returns a String object with a custom <code>valueOf</code> method that computes its <code>eval</code>able expression when called.</li>
 </ul>
-<pre><code>function computable(value) {
+<pre><code class="lang-javascript">function computable(value) {
     var output = new String(value)
     output.valueOf = compute.bind(this, value)
     return isNaN(+value) ? output : +value
@@ -111,7 +111,8 @@ function update(cell, value) {
     data[cell] = computable(value)
     localStorage[&quot;spreadsheet&quot;] = JSON.stringify(data)
 }
-</code></pre><p>Breaking out <code>compute</code> from <code>update</code> is a fairly standard type of refactorization: we&#39;re simply decoupling code for better separation of concerns and better reusability.</p>
+</code></pre>
+<p>Breaking out <code>compute</code> from <code>update</code> is a fairly standard type of refactorization: we&#39;re simply decoupling code for better separation of concerns and better reusability.</p>
 <p>The creation of the <code>computable</code> factory is the key refactorization: a computable enables us to store expressions that can evaluate their values on demand. This function is used by the <code>update</code> function to store computable values in our in-memory <code>data</code> store, and it&#39;s also used at the very beginning of the script to turn the deserialized <code>localStorage</code> data into computable value objects.</p>
 <pre><code class="lang-javascript">var data = JSON.parse(localStorage[&quot;spreadsheet&quot;] || &quot;{}&quot;)
 for (var cell in data) data[cell] = computable(data[cell])
