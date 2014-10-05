@@ -5,10 +5,182 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Decreasing cognitive load</title>
+			<link>http://lhorie.github.io/mithril-blog/decreasing-cognitive-load.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>A spreadsheet in 60 lines of javascript</title>
 			<link>http://lhorie.github.io/mithril-blog/a-spreadsheet-in-60-lines-of-javascript.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="a-spreadsheet-in-60-lines-of-javascript">A spreadsheet in 60 lines of Javascript</h2>
+<hr>
+<p>Short on time? <a href="examples/spreadsheet-improved.html">See it in action here</a></p>
+<hr>
+<p>Apps with terse code have a special place in my heart. Note that I said <em>terse</em>, not <em>clever</em>. Cleverness is a tendency to sacrifice code clarity and readability in order to push code size to be smaller (think code golfing). Being terse, on the other hand, is the practice of seeking simplicity in order to make code easier to understand. It implies looking for elegant solutions and avoiding over-engineering.</p>
+<p>One such app that looks particularly impressive is this <a href="examples/spreadsheet.html">spreadsheet</a>, written in a mere 30 lines of vanilla javascript.</p>
+<p>I decided to write a version of it using <a href="http://lhorie.github.io/mithril">Mithril</a>. It may seem silly to require a framework (even if it&#39;s a really small one) to do something that has been proven to be doable without one, but the purpose of this exercise is precisely to get an idea of how much boilerplate would be required in order to implement the app using the Mithril framework.</p>
+<p>This is an important consideration. Frameworks usually require boilerplate code in order to work, and frameworks like Angular can get notoriously verbose. Verbosity can add various costs to development: extra typing required, steep learning curves, more mental baggage to carry when reading code.</p>
+<pre><code class="lang-javascript">//A simple, production-quality AngularJS factory
+(function() {
+    function something($http) {
+        //code here
+    }
+
+    something.$injector = [&quot;$http&quot;]
+
+    angular.module(&quot;spreadsheet&quot;).factory(something)
+})()
+</code></pre>
+<p>Mithril positions itself as a minimalist framework. Minimalism can be a slippery slope. It&#39;s easy to make a &quot;minimalist&quot; framework that defers all the hard work to the application developer, but the real goal of minimalism in the context of frameworks is to enable developers to simplify their own codebases <em>in addition</em> to being a simple framework. So let&#39;s see how Mithril fares.</p>
+<hr>
+<h3 id="the-model-layer">The model layer</h3>
+<p>Here&#39;s a <a href="examples/spreadsheet.html">port of the spreadsheet code to Mithril</a>.</p>
+<p>The <code>data</code> variable is the in-memory data store. It reads from <code>localStorage</code> on page load and it&#39;s used throughout the code to store the current state of the spreadsheet data. It&#39;s a map of values, whose keys are expect to be named after their cells (e.g. <code>data[&quot;a1&quot;]</code>, <code>data[&quot;b3&quot;]</code>, etc)</p>
+<pre><code class="lang-javascript">var data = JSON.parse(localStorage[&quot;spreadsheet&quot;] || &quot;{}&quot;)
+</code></pre>
+<p>The <code>update</code> function computes an expression if it&#39;s a string that starts with <code>&quot;=&quot;</code>. Then it saves the computed value to both in the in-memory map and <code>localStorage</code>. Here, again, cells are named by combining the letters for the x axis and the numbers from the y axis (e.g. <code>&quot;a1&quot;</code>)</p>
+<pre><code class="lang-javascript">function update(cell, value) {
+    if (value != null &amp;&amp; value[0] == &quot;=&quot;) {
+        try { with (data) data[cell] = eval(value.substring(1)) } catch (e) {}
+    }
+    else data[cell] = isNaN(+value) ? value : +value
+    localStorage[&quot;spreadsheet&quot;] = JSON.stringify(data)
+}
+</code></pre>
+<h3 id="the-view-layer">The view layer</h3>
+<p>The <code>grid</code> function creates a table and accepts an arbitrary Mithril template as an argument, which is cloned for every cell in the table.</p>
+<pre><code class="lang-javascript">function grid(withCell) {
+    for (var rows = [], i = 0; i &lt; 27; i++) {
+        for (var cols = [], j = 0; j &lt; 17; j++) {
+            var letter = String.fromCharCode(&quot;a&quot;.charCodeAt(0) + j - 1)
+            cols.push(m(&quot;td&quot;, i &amp;&amp; j ? withCell(letter + i) : i || letter))
+        }
+        rows.push(m(&quot;tr&quot;, cols))
+    }
+    return m(&quot;table&quot;, m(&quot;tbody&quot;, rows))
+}
+</code></pre>
+<p>The <code>view</code> function is the main template. It creates a grid of text inputs, each of which has bindings to synchronize their values to a slot in the <code>data</code> map.</p>
+<p>The <code>cellName</code> argument is the name of the corresponding cell. The name of the very first cell is &quot;a1&quot;, the one beside that is &quot;a2&quot;, and so on.</p>
+<pre><code class="lang-javascript">function view() {
+    return grid(function(cellName) {
+        return m(&quot;input&quot;, {
+            onchange: m.withAttr(&quot;value&quot;, update.bind(this, cellName)),
+            value: data[cellName] || &quot;&quot;
+        })
+    })
+}
+</code></pre>
+<p>Finally, the last line tells Mithril to run the application:</p>
+<pre><code class="lang-javascript">m.module(document.body, {controller: function() {}, view: view})
+</code></pre>
+<p>You may have noticed the empty controller. There&#39;s only a single writing method in the model (<code>update</code>), and we&#39;re calling it directly from the view to cut down on boilerplate.</p>
+<p>As you can see, the code isn&#39;t that complicated: there&#39;s a map of values whose keys are the names of the cells. Whenever an input changes, its respective value is computed (if it&#39;s an <code>eval</code>able expression), and then saved to its respective slot in the <code>data</code> map (and also to <code>localStorage</code>). Then Mithril redraws and puts the UI back in sync with the data.</p>
+<p>And this port only takes 28 lines of code, just like the original. Not bad.</p>
+<hr>
+<h3 id="extending-the-application">Extending the application</h3>
+<p>We saw that porting the vanilla app to Mithril yields very little boilerplate, while keeping code quite readable. But the real test for terseness is whether we can build more functionality on top of it: <em>clever</em> code is full of obscurities and it&#39;s hard to understand and modify, but <em>elegant</em> code should be easy to refactor.</p>
+<p>Conveniently, we can put our code to the test, because this spreadsheet app can use some improvements. As you might already know, the whole point of a spreadsheet is that they are supposed to be <em>reactive</em>. If the value of <code>a3</code> is <code>&quot;=a1+a2&quot;</code>, then changing the value of <code>a1</code> should also change <code>a3</code>.</p>
+<p>Currently our app simply overwrites the expression so once it&#39;s computed, we lose its formula.</p>
+<p>Here&#39;s a <a href="http://jsfiddle.net/dnv352kn/">rewrite that fixes that</a>.</p>
+<p>The first major change is that our <code>update</code> function is now broken out into three parts: </p>
+<ul>
+<li>the <code>update</code> function takes care of saving to the in-memory data store and to localStorage as before (but it no longer performs the evaluation of expressions)</li>
+<li>the <code>compute</code> function takes care of the expression evaluation logic</li>
+<li>and finally, the <code>computable</code> function is a <strong>value object factory</strong>. If the input to this function is a number or a string, it simply returns that value, but if the input is an <code>eval</code>able expression (i.e. a string beginning w/ <code>=</code> and followed by a javascript expression), it returns a String object with a custom <code>valueOf</code> method that computes its <code>eval</code>able expression when called.</li>
+</ul>
+<pre><code class="lang-javascript">function computable(value) {
+    var output = new String(value)
+    output.valueOf = compute.bind(this, value)
+    return isNaN(+value) ? output : +value
+}
+function compute(value) {
+    if (value != null &amp;&amp; value[0] == &quot;=&quot;) {
+        try { with (data) return eval(value.substring(1)) } catch (e) {}
+    }
+    else return value
+}
+function update(cell, value) {
+    data[cell] = computable(value)
+    localStorage[&quot;spreadsheet&quot;] = JSON.stringify(data)
+}
+</code></pre>
+<p>Breaking out <code>compute</code> from <code>update</code> is a fairly standard type of refactorization: we&#39;re simply decoupling code for better separation of concerns and better reusability.</p>
+<p>The creation of the <code>computable</code> factory is the key refactorization: a computable enables us to store expressions that can evaluate their values on demand. This function is used by the <code>update</code> function to store computable values in our in-memory <code>data</code> store, and it&#39;s also used at the very beginning of the script to turn the deserialized <code>localStorage</code> data into computable value objects.</p>
+<pre><code class="lang-javascript">var data = JSON.parse(localStorage[&quot;spreadsheet&quot;] || &quot;{}&quot;)
+for (var cell in data) data[cell] = computable(data[cell])
+</code></pre>
+<p>A computable value object is an immutable object that behaves mostly like a javascript primitive number or string, with one exception: when we attempt to use a computable entity in a mathematical expression, it implicitly calls the custom <code>valueOf</code> method and uses the evaluated expression instead of using the string value. This allows expressions like <code>a1+a2</code> to perform mathematical computations seamlessly regardless of whether <code>a1</code> and <code>a2</code> are numbers or computables. And since computables can evaluate to expressions that reference other computables, they can recursively cascade a data change through a complex web of computable expressions.</p>
+<p>Here are some tests to demonstrate the expected behavior of the computable value object:</p>
+<pre><code class="lang-javascript">computable(1) == 1 // true
+computable(&quot;hello&quot;) == &quot;hello&quot; // true
+computable(&quot;=1+1&quot;).toString() == &quot;=1+1&quot; // true
+computable(&quot;=1+1&quot;).valueOf() == 2 // true
+
+data.a1 = 1
+computable(&quot;=a1+2&quot;) + 3 == 6 //true
+
+data.a1 = 1
+data.a2 = computable(&quot;=a1+2&quot;)
+computable(&quot;=a2+3&quot;) + 4 == 10 //true
+</code></pre>
+<p>In the last two tests you can see how tightly integrated to the language <code>valueOf</code> is. The <code>toString</code> and <code>valueOf</code> methods are implicitly called by Javascript whenever type casting is implied. Computable expressions take advantage of this language feature to implement reactivity.</p>
+<hr>
+<p>The second major change is that now there&#39;s a formula input at the top. This UI addition lets us see and edit the un-evaluated expression for any given cell.</p>
+<p>You can see how the bindings for this input work by looking at the <code>view</code> function:</p>
+<pre><code class="lang-javascript">function view() {
+    return [
+        m(&quot;input.formula&quot;, {
+            onchange: m.withAttr(&quot;value&quot;, update.bind(this, cell())),
+            value: data[cell()] || &quot;&quot;
+        }),
+        grid(function(cellName) {
+            var value = compute(data[cellName]) || &quot;&quot;
+            return m(&quot;input&quot;, {
+                onkeydown: move,
+                onfocus: cell.bind(this, cellName),
+                onchange: m.withAttr(&quot;value&quot;, update.bind(this, cellName)),
+                value: value,
+                style: {textAlign: isNaN(value) || value === &quot;&quot; ? &quot;left&quot; : &quot;right&quot;}
+            })
+        })
+    ]
+}
+</code></pre>
+<p>The <code>cell</code> variable is simply a view-model getter-setter that holds the name of a cell.</p>
+<p>The <code>&quot;input.formula&quot;</code> element has a binding that references the <code>cell</code> getter-setter: when this input is changed, we update the data for the cell referenced by <code>cell()</code>. The value for this input is simply the string value of the <code>data</code> slot referenced by <code>cell()</code>.</p>
+<p>In addition, each input in the grid now has a <code>onfocus</code> handler that sets the value of <code>cell</code> to their respective cell names. In short, focusing on a cell displays the uncomputed value for that cell.</p>
+<hr>
+<p>Finally, one handy UI improvement was added: the app is now keyboard-aware. Pressing the arrows on the keyboard now moves focus around the grid. This happens thanks to the <code>onkeypress</code> event handler <code>move</code>.</p>
+<pre><code class="lang-javascript">function move(e) {
+    var td = e.target.parentNode, tr = td.parentNode, table = tr.parentNode
+    if (e.keyCode == 37) return highlight(tr.childNodes[Math.max(1, td.cellIndex - 1)].firstChild)
+    else if (e.keyCode == 38) return highlight(table.childNodes[Math.max(1, tr.rowIndex - 1)].childNodes[td.cellIndex].firstChild)
+    else if (e.keyCode == 39) return highlight(tr.childNodes[Math.min(tr.childNodes.length - 1, td.cellIndex + 1)].firstChild)
+    else if (e.keyCode == 40) return highlight(table.childNodes[Math.min(table.childNodes.length - 1, tr.rowIndex + 1)].childNodes[td.cellIndex].firstChild)
+    else m.redraw.strategy(&quot;none&quot;)
+}
+function highlight(cell) {
+    cell.focus()
+    cell.selectionEnd = cell.value.length
+    return false
+}
+</code></pre>
+<p>There&#39;s also a one-liner in <code>view</code> that takes care of text alignment of numbers vs text, but other than that, that&#39;s pretty much it. These few UI improvements add 16 lines to the code (more than half of the original size!), but I&#39;d argue that being able to navigate a spreadsheet with the keyboard and quickly be able to tell apart text from numbers are important features to have - if you disagree, you can reduce the code size by 16 lines and still have a reactive spreadsheet :)</p>
+<hr>
+<p>Once you understand the <code>computable</code> value object, the rest of the application is fairly straightforward: it boils down to the basic principle of data flowing from the model to the view, and then using event handlers to push changes back to the model.</p>
+<p>We already covered in other articles some reasons as to what makes this Mithril app clean (despite it having non-trivial functionality like focus-aware reactivity), but it&#39;s worth mentioning them again: </p>
+<ul>
+<li>Mithril&#39;s &quot;call-me-when-you-need&quot; approach to tooling and the well-defined flow of data makes it easy to spend time thinking about the problem domain, rather than wasting time on framework-specific concepts.</li>
+<li>Explicit data bindings (as opposed to cookie-cutter binding tools like <code>ng-model</code>) allow a greater degree of flexibility when connecting form elements to model data slots, which paradoxically results in less complexity.</li>
+<li>The ability to idiomatically have procedural code live in functions in the view layer lets us express DOM actions without a lot of boilerplate integration code</li>
+<li>Idiomatic Mithril code takes the concept of design patterns to heart: we implement <em>patterns</em> of code in their simplest form, rather than creating bulky classes named after patterns.</li>
+</ul>
+<p>Another thing that is worth noting (especially for those who are averse to Mithril&#39;s templating syntax), is that even though this app literally fills the page with DOM elements, there&#39;s very little &quot;markup&quot; code. This illustrates well the fact that, in non-trivial applications, logic often dominates in terms of code volume. A lot of boilerplate in other frameworks come from shuffling logic around in order to keep HTML &quot;clean&quot; in a way that is reminicent of <a href="http://en.wikipedia.org/wiki/Zero-sum_game">zero sum games</a> (i.e. get clarity over here at the expense of added complexity over there). We&#39;ve learned long ago to forego normalization purity in databases in favor of a pragmatic middle ground, and I think this app is an example that shows that pragmatism is a good design driver in frontend as well.</p>
+
 			]]></description>
 		</item>
 		<item>

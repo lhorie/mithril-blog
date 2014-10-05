@@ -5,6 +5,268 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Decreasing cognitive load</title>
+			<link>http://lhorie.github.io/mithril-blog/decreasing-cognitive-load.html</link>
+			<description><![CDATA[
+<h2 id="decreasing-cognitive-load">Decreasing cognitive load</h2>
+<p>You might have heard of something called <strong>the paradox of choice</strong>. We might think that having many options to choose from is a good thing, but given many similar choices, what actually happens often is that we end up spending so much time trying to analyze them, that we end up wasting more time than if we were to just randomly pick one. This phenomenon is also known as <em>choice paralysis</em>.</p>
+<p>There&#39;s a similar phenomenon, known as <strong>information overload</strong>, that is similar in the way that it overwhelms us with information about a particular topic. The problem with information overload is that while all the presented information is ostensibly <em>correct</em>, it&#39;s also mostly irrelevant for the task at hand.</p>
+<p>Frameworks are often difficult to learn due to similar cognitive patterns: a newbie comes in to a documentation side and is confronted with a variety of classes and methods that are all useful in one context or another, but it&#39;s not immediately obvious how they relate to the newbie&#39;s particular problem. When <em>every</em> problem that a developer encounters requires yet another dig through the documentation in order to learn some new incantation, or to remember what its syntax was, productivity is lost.</p>
+<p>So, in order to not get in people&#39;s ways, it&#39;s important that frameworks and libraries try to minimize the amount of cognitive load they put on developers.</p>
+<p>One trick that jQuery used to ease people into its vast API was function overloading:</p>
+<pre><code class="lang-javascript">//set the color of one element
+$(&quot;#foo&quot;).css(&quot;color&quot;, &quot;red&quot;)
+
+//get the color
+$(&quot;#foo&quot;).css(&quot;color&quot;)
+
+//set the color on many elements
+$(&quot;h1&quot;).css(&quot;color&quot;, &quot;red&quot;)
+</code></pre>
+<p>You don&#39;t need to remember if the method is called <code>getCss</code>, or <code>readCSS</code>, and whether the counterpart is <code>setStyle</code> or <code>setCSS</code> (and did you noticed the uppercase?). There&#39;s not a different API if you&#39;re setting styles on one vs many elements. It&#39;s just <code>css</code> all the time.</p>
+<p>Compare it to Prototype.js, arguably the most popular javascript framework at the time jQuery came out:</p>
+<pre><code class="lang-javascript">//set the color of one element
+$(&quot;foo&quot;).setStyle({color: &quot;red&quot;})
+
+//get the color
+$(&quot;foo&quot;).style.color
+
+//set the color of many elements
+$$(&quot;h1&quot;).invoke(&quot;setStyle&quot;, {color: &quot;red&quot;})
+</code></pre>
+<p>You can clearly see why jQuery is still loved by many, and why Prototype.js fell by the sidelines. Having APIs that are easy to remember and that adapt to similar but slightly different use cases help the framework become transparent so that the developer can then focus on their own problems rather than be fighting against framework syntax.</p>
+<p>Mithril also uses this design trick to help newbies ease into its API:</p>
+<pre><code class="lang-javascript">//I just want a div
+m(&quot;div&quot;)
+
+//but it has text
+m(&quot;div&quot;, &quot;Hello world&quot;)
+
+//actually, I need to toggle a class on it too
+m(&quot;div&quot;, {class: isActive ? &quot;active&quot; : &quot;&quot;}, &quot;Hello world&quot;)
+</code></pre>
+<p>Another slightly different example is <code>m.route</code>. It has three overloads that do fairly different things: define routes, redirect, and make links routed. This may seem weird at a glance, but it&#39;s an example of being <em>answer-oriented</em>. When it comes to routing, these are three common questions: &quot;how do I define a bunch of routes?&quot;, &quot;how do I redirect to a route?&quot;, and &quot;how do I make my link go to a routed path instead of a regular URL?&quot;. Having the answer always be the same (i.e. &quot;use m.route&quot;) means less names to memorize.</p>
+<p>Mithril also takes it a step further and makes it easy for developers themselves to create predictable APIs with <code>m.prop</code>. We previously saw this in the <a href="the-uniform-access-principle.html">uniform access principle article</a>.</p>
+<pre><code class="lang-javascript">var name = m.prop(&quot;&quot;)
+
+//set the value
+name(&quot;John&quot;)
+
+//get the value
+console.log(name()) // &quot;John&quot;
+</code></pre>
+<p>In a <a href="json-all-the-things.html">follow-up article</a>, we also saw another subtle place where Mithril encourages good API design:</p>
+<pre><code class="lang-javascript">var User = function(data) {
+    this.firstName = m.prop(data.firstName)
+    this.lastName = m.prop(data.lastName)
+}
+
+//automatically convert response objects to User instances
+m.request({method: &quot;GET&quot;, url: &quot;/users&quot;, type: User})
+</code></pre>
+<p>While this isn&#39;t technically function overloading per se, it uses the options argument pattern to provide an extensible map of parameters, so that it&#39;s easy to set as many or as few of the input parameters as you&#39;re able to. The options argument pattern effective makes every permutation of parameters a valid overload.</p>
+<p>But more importantly, it makes the argument list for every model entity predictable: You don&#39;t need to remember the order of arguments, and knowing how to create one type of entity is enough knowledge to guess how to create others.</p>
+<p>Which brings us to another aspect of predictable APIs: <em>consistency</em></p>
+<p>Again, jQuery is a great example of this:</p>
+<pre><code class="lang-javascript">//how I set some css?
+$(&quot;#foo&quot;).css(&quot;color&quot;, &quot;red&quot;)
+
+//attributes?
+$(&quot;#foo&quot;).attr(&quot;title&quot;, &quot;hello&quot;)
+
+//data?
+$(&quot;#foo&quot;).data(&quot;name&quot;, &quot;john&quot;)
+</code></pre>
+<p>You can look at a method and guess (most likely correctly) how the other ones work.</p>
+<hr>
+<h3 id="interfaces-interfaces">Interfaces, interfaces</h3>
+<p>Being conscious of consistency can make a significant difference in how one organizes code.</p>
+<p>From my experience, I think it takes a bit of a mental shift to go from writing single-purpose application code to writing multi-purpose libraries. Single-purpose code doesn&#39;t strictly require much thought in terms of its API because it is typically only a <em>consumer</em>: it may assemble a bunch of different things, but it&#39;s rarely (if ever) used to compose into more than one bigger system.</p>
+<p>But as systems get more complex the line between single-purpose application code and multi-purpose library code starts to blur: we often start needing  reusable application-level agglomerations of code in order to avoid problems like code duplication (i.e. two or more pieces of code that do <em>almost</em> the same thing, but not quite).</p>
+<p>Striving for consistency implicitly means developers need to be aware of what code is already there in order to follow convention. This is, I think, where the mental shift happens. With many frameworks, conventions are baked into the boilerplate, but then teams without a good code review workflow start writing in whatever style they prefer and end up with a wild west of code when all these pieces start to come together into bigger things two years later.</p>
+<p>As it turns out, for years OOP has offered tools like <em>interfaces</em> to help us improve code consistency. Even though Javascript isn&#39;t a statically typed OOP language, we can borrow some of these ideas.</p>
+<p>Here&#39;s an example of some code I use at work, to illustrate:</p>
+<pre><code class="lang-javascript">var select2 = {}
+select2.config = function(options) {
+    var type = ctrl.type, prop = ctrl.binds
+    return function(element, isInitialized) {
+        if (!isInitialized) {
+            $(element).select2({
+                ajax: {
+                    url: type.url,
+                    data: function(term) {
+                        return {ForAutoCompleter:true, Keyword: term}
+                    },
+                    results: function(data) {
+                        return {results: data.Entries.map(function(item) {
+                            var instance = new type(item)
+                            return {id: type.id(instance), text: type.label(instance), data: instance}
+                        })}
+                    }
+                }
+            })
+            .on(&quot;change&quot;, function(e) {
+                m.startComputation()
+                prop(e.added ? e.added.data : null)
+                m.endComputation()
+            })
+
+            var item = prop()
+            if (item) {
+                $(element).select2(&quot;data&quot;, {id: type.id(item), text: type.label(item)})
+            }
+        }
+    }
+}
+</code></pre>
+<p>The code above is an integration helper for the select2 autocompleter library. The exact details of the implementation aren&#39;t that important for this discussion. What we&#39;re really interested in is in seeing how it ties in to a larger system.</p>
+<p>Let&#39;s imagine we have a model entity <code>User</code>:</p>
+<pre><code class="lang-javascript">//in the model
+var User = function(data) {
+    this.id = m.prop(data.id)
+    this.name = m.prop(data.name)
+}
+User.url = &quot;/users&quot;
+User.id = function(user) {return user.id()}
+User.text = function(user) {return user.name()}
+</code></pre>
+<p>This <code>User</code> class implements an interface: it has a static <code>url</code> property and two methods <code>id</code> and <code>text</code> which dereference a system ID and a user-friendly identifier for the <code>User</code> class. I might then later implement the same interface for a <code>Project</code> class, such that I can generically retrive the url, id and readable name for a project.</p>
+<p>As I mentioned, Javascript doesn&#39;t have the concept of OOP interfaces, or generics, but if it was a statically typed OOP language, the interface would look something like this:</p>
+<pre><code>interface IEntity&lt;T&gt; {
+    static string url;
+    static number id(T entity);
+    static string name(T entity);
+}
+</code></pre><p>The way to use the select2 widget is to pass it a model entity like <code>User</code> and a <code>m.prop</code> getter-setter, like this:</p>
+<pre><code class="lang-javascript">var vm = {
+    user: m.prop()
+}
+
+//in the view
+m(&quot;input&quot;, {config: select2.config({binds: vm.user, type: User})})
+
+//if we select a user from the dropdown, then `vm.user()` will point to it
+</code></pre>
+<p>The <code>selec2.config</code> accepts a <code>type</code> parameter to which I can pass anything that implements the <code>IEntity</code> interface. It then internally takes care of hooking up the select2 plugin so that it reads the proper id and text fields from an ajax request that is made to the appropriate url.</p>
+<p>The helper also accepts a <code>binds</code> property, which is expected to be an <code>m.prop</code> getter-setter, and the helper bi-directionally binds the dropdown&#39;s selected value to the getter-setter.</p>
+<p>So when it all comes together, we are then able to freely swap out what model entity populates the options for the select2 widget, and when a user picks an option from the dropdown, we can put the selected item in any getter-setter (or anything that behaves like one).</p>
+<pre><code class="lang-javascript">//this is what a project autocompleter might look like
+m(&quot;input&quot;, {config: select2.config({binds: vm.project, type: Project})})
+
+//or a booking autocompleter
+m(&quot;input&quot;, {config: select2.config({binds: vm.booking, type: Booking})})
+
+//or an article autocompleter
+m(&quot;input&quot;, {config: select2.config({binds: vm.article, type: Article})})
+</code></pre>
+<p>The end result of having defined an interface is that we don&#39;t need to go look up the select2 documentation or copy-paste a bunch of options every time we create a dropdown. Instead, the widget API behaves more like an agnostic shell, much like generic collections that you might see in a statically typed language.</p>
+<p>Creating a predictable access pattern via the IEntity interface also lets us pivot in interesting directions. What if we wanted a dropdown that showed all the users, but only for a single project? Easy, create a factory:</p>
+<pre><code class="lang-javascript">//in the model
+var projectUser = function(projectID) {
+    var ProjectUser = function(data) {
+        return new User(data)
+    }
+    ProjectUser.url = &quot;/projects/&quot; + projectID + &quot;/users&quot;
+    ProjectUser.id = User.id
+    ProjectUser.text = User.text
+
+    return ProjectUser
+}
+
+//in the view
+m(&quot;input&quot;, {config: select2.config({binds: vm.user, type: projectUser(projectID)})})
+</code></pre>
+<p>The <code>projectUser</code> creates a class that implements IEntity. We can be sure that it will work with the autocompleter because it fulfills the contract specified by IEntity, and we can easily tell what the scope of the dropdown will be just from looking at the <code>url</code> field.</p>
+<hr>
+<h3 id="naming-is-hard">Naming is hard</h3>
+<p>We can take consistency further in other directions: for example, if we needed to create a date picker widget, it would also needs to bind to a getter-setter.</p>
+<p>So why not call the argument for that <code>binds</code> as well? Naming bi-directional binding arguments the same across the board makes the API more discoverable than, say, having specially crafted event handler names for every single widget.</p>
+<pre><code class="lang-javascript">//easy to guess if everything else uses the name `binds` as a convention
+m(&quot;input&quot;, {config: datepicker.config({binds: vm.date})})
+
+//not so easy to guess
+m(&quot;input&quot;, {config: datepicker.config({value: vm.date(), ondatechange: m.withAttr(&quot;value&quot;, vm.date)})})
+</code></pre>
+<p>When we start bringing all of our conventions together, the end result becomes familiar:</p>
+<pre><code class="lang-javascript">//define a component view
+select2.view = function(options) {
+    return m(&quot;input&quot;, {config: select2.config(options)})
+}
+
+//use the component
+select2.view({binds: vm.user, type: User})
+</code></pre>
+<p>If you&#39;ve dabbled with components, you already know how use functions named <code>view</code>. We just saw what <code>binds</code> does, and we also saw what kinds of things can be plugged into <code>type</code>. So now, you could stumble across code like the following and immediately understand it, even without having seen any documentation:</p>
+<pre><code class="lang-javascript">datepicker.view({binds: vm.date})
+</code></pre>
+<hr>
+<h3 id="obvious-is-relative">Obvious is relative</h3>
+<p>But just because <code>binds</code> and <code>IEntity</code> make sense to us now, it doesn&#39;t mean that they will be obvious to someone who&#39;s not familiar with them. Documentation is still a key piece in a predictable system. Co-workers leave for greener pastures, teams grow. If your system is non-trivial and needs to last longer than even just a couple of years, it&#39;s foolish to ignore the dynamic nature of the world.</p>
+<p>Naming conventions such as <code>binds</code> can be documented in a style guide that shows examples of usage for various widgets that already use the convention.</p>
+<pre><code class="lang-javascript">//call the `.view` method of a component from your templates in order to include them
+//widgets can read and write from getter-setters via the `binds` parameter
+
+select2.view({binds: vm.user, type: User})
+
+datepicker.view({binds: vm.date})
+</code></pre>
+<p>It&#39;s also good practice to document how to create a trivial <code>binds</code> implementation, so that others can learn how to extend the system within the conventions.</p>
+<pre><code class="lang-javascript">//here&#39;s how a create a `binds` option for bi-directional bindings
+var getterSetter = m.prop()
+
+//asks user to change the value of a getter-setter if one is not provided
+var example = function(options) {
+    if (!options.binds()) {
+        options.binds(prompt(&quot;Set a value:&quot;))
+    }
+}
+
+example({binds: getterSetter})
+</code></pre>
+<p>You can document interfaces by describing their API, and by showing examples of an implementation, as well as consumption:</p>
+<pre><code class="lang-javascript">/*
+interface IEntity&lt;T&gt; {
+    static string url;
+    static number id(T entity);
+    static string name(T entity);
+}
+*/
+
+//User implements IEntity
+var User = function(data) {
+    this.id = m.prop(data.id)
+    this.name = m.prop(data.name)
+}
+User.url = &quot;/users&quot;
+User.id = function(user) {return user.id()}
+User.text = function(user) {return user.name()}
+
+//-----------------------------------------
+//consuming the interface (real world case)
+select2.view({binds: vm.user, type: User})
+
+//-----------------------------------------
+//consuming the interface (simple example of generic code)
+function consume(type, value) {
+    console.log(&quot;url:&quot;, type.url, &quot;id:&quot;, type.id(value), &quot;text:&quot;, type.text(value))
+}
+consume(User, new User({id: 1, name: &quot;John&quot;}))
+consume(Project, new Project({id: 1, name: &quot;John&#39;s Project&quot;}))
+
+//exercise: make `ThirdPartyEntity` work w/ `consume`
+consume(ThirdPartyEntity, new ThirdPartyEntity({ThirdPartyEntityID: 1, Description: &quot;3rd party entity&quot;}))
+</code></pre>
+<hr>
+<h3 id="conclusion">Conclusion</h3>
+<p>We can make complex systems less complex by creating consistent patterns, and documenting these patterns effectively.</p>
+<p>Code grows and rots, so it&#39;s important to plan ahead.</p>
+<p>I once read a theory that developers hit walls of complexity every time they increase the size of their codebases by an order of magnitude (i.e. the idea is that a junior developer might find it hard to expand their simple procedural programs past 3000 lines, and that developers hit another wall of complexity at 30,000 lines, and again at 300,000 and so on)</p>
+<p>My own theory is that the these walls appear when the volume of complexity of a codebase exceeds the volume of complexity solved by the libraries it uses. For example, jQuery is undoubtedly useful when dealing with browser quirks, but once an application grows over a few thousand lines of code, unstructured jQuery code simply becomes too difficult to maintain, and you start needing the discipline of a framework to organize code. But when you&#39;re at tens of thousands of lines of code, you start to run out of entity types to CRUD, and your application growth starts to build on top of existing concepts. This is when you need the mental shift from being a library consumer to being a reusable component author, but with a focus on the interacting parts within the application (as opposed to generic one-glove-fit-all open source libraries).</p>
+<p>Hopefully the ideas we saw in this article will help you tame complexity if you need to scale past the hundreds of lines of code wall.</p>
+
+			]]></description>
+		</item>
+		<item>
 			<title>A spreadsheet in 60 lines of javascript</title>
 			<link>http://lhorie.github.io/mithril-blog/a-spreadsheet-in-60-lines-of-javascript.html</link>
 			<description><![CDATA[

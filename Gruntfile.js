@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 			},
 			rss: {
 				options: {layout: "layout/rss.xml"},
-				files: [{src: ["articles/a-spreadsheet-in-60-lines-of-javascript.md"], dest: "feed.xml"}]
+				files: [{src: ["articles/decreasing-cognitive-load.md"], dest: "feed.xml"}]
 			}
 		}
 	});
