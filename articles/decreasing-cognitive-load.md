@@ -117,7 +117,7 @@ Here's an example of some code I use at work, to illustrate:
 ```javascript
 var select2 = {}
 select2.config = function(options) {
-	var type = ctrl.type, prop = ctrl.binds
+	var type = options.type, prop = options.binds
 	return function(element, isInitialized) {
 		if (!isInitialized) {
 			$(element).select2({

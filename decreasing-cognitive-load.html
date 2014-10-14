@@ -99,7 +99,7 @@ $(&quot;#foo&quot;).data(&quot;name&quot;, &quot;john&quot;)
 <p>Here&#39;s an example of some code I use at work, to illustrate:</p>
 <pre><code class="lang-javascript">var select2 = {}
 select2.config = function(options) {
-    var type = ctrl.type, prop = ctrl.binds
+    var type = options.type, prop = options.binds
     return function(element, isInitialized) {
         if (!isInitialized) {
             $(element).select2({
