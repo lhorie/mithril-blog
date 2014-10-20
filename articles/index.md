@@ -2,6 +2,7 @@
 
 Here you will find articles about cool things you can do with Mithril, and articles about related web application development topics.
 
+- [Common mistakes](common-mistakes.html) - Oct 19, 2014
 - [Mapping view-models](mapping-view-models.html) - Oct 12, 2014
 - [Decreasing cognitive load](decreasing-cognitive-load.html) - Oct 5, 2014
 - [A spreadsheet in 60 lines of Javascript](a-spreadsheet-in-60-lines-of-javascript.html) - September 28, 2014
