@@ -5,10 +5,68 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Module partial application</title>
+			<link>http://lhorie.github.io/mithril-blog/module-partial-application.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Common mistakes</title>
 			<link>http://lhorie.github.io/mithril-blog/common-mistakes.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="common-mistakes">Common mistakes</h2>
+<p>Any time we start learning something new, we are bound to stumble and make mistakes along the way. In this article, we&#39;ll look at some common issues that I&#39;ve seen people run into when they were getting into Mithril.</p>
+<hr>
+<h3 id="1-using-jquery">1. Using jQuery</h3>
+<p>It&#39;s surprisingly tempting to use jQuery to manipulate the DOM from a controller or even a view-model, especially for those without experience in MVC frameworks. I&#39;ve <a href="http://lhorie.github.io/mithril/comparison.html">talked about jQuery&#39;s scalability problem before</a>. The gist is that jQuery DOM manipulation implicitly puts UI state data in the DOM itself, and as applications grow larger, it becomes harder and harder to reason about that state, and the tendency to build more functionality on top of it causes the application to become brittle and hard to modify.</p>
+<p>Another problem with mixing jQuery is that it creates a tight coupling between the data and the presentation layer, making both harder to test in isolation.</p>
+<p>The alternative to using jQuery is to apply the same MVC concepts that you would see in server-side frameworks: have data live in the model layer, and explicitly derive the state of the view from the data. I&#39;ve <a href="what-is-a-view-model.html">talked about using view-models</a> for <a href="mapping-view-models.html">separating ORM classes from UI state</a> within the model layer. Moving away from jQuery is simply an exercise in applying the same workflow as you would in your traditional server-side MVC framework of choice, and being mindful of the existence and the nature of UI state.</p>
+<p>With all of this said, you <em>can</em> use jQuery to augment the behavior of an element via the <a href="http://lhorie.github.io/mithril/mithril.html#accessing-the-real-dom">config attribute</a>. Just avoid doing it in controllers and view-models.</p>
+<hr>
+<h3 id="2-misunderstanding-dynamic-scoping">2. Misunderstanding dynamic scoping</h3>
+<p>Let&#39;s face it, the <code>this</code> keyword is confusing. Many seasoned developers still struggle with it, especially when you start adding nested anonymous functions, partial application, and functions-as-arguments into the picture. It&#39;s a good idea to consider using idioms without language-specific caveats to help ease new developers into the codebase.</p>
+<p>One common way to make <code>this</code> more junion-friendly is to use the <code>var self = this</code> idiom. Be aware though that <code>self</code> is just as non-descriptive as a variable name as <code>this</code> and it can yield somewhat repetitive code.</p>
+<p>The best thing to do to avoid <code>this</code> confusion as a team grows is to avoid using it altogether. Here&#39;s an example that uses <code>this</code>:</p>
+<pre><code class="lang-javascript">var home = {}
+home.vm = {
+    init: function() {
+        this.name = &quot;foo&quot;
+    }
+}
+</code></pre>
+<p>Here&#39;s an alternative way of writing the snippet above using the easier-to-understand lexical scoping:</p>
+<pre><code class="lang-javascript">var home = {}
+home.vm = {}
+home.vm.init = function() {
+    home.vm.name = &quot;foo&quot;
+}
+</code></pre>
+<p>The structure of the data is now much more obvious, albeit at the expense of adding some repetition in the form of explicit <code>home.vm</code> references everywhere.</p>
+<p>Here&#39;s a cleverer way of writing it that reduces repetition:</p>
+<pre><code class="lang-javascript">var home = {}
+new function(vm) {
+    vm.init = function() {
+        vm.name = &quot;foo&quot;
+    }
+}(home.vm = {})
+</code></pre>
+<hr>
+<h3 id="3-backwards-controllers">3. Backwards controllers</h3>
+<p>Controllers are a <em>scoping</em> mechanism. They are responsible to defining what is accessible by the view: what data can be iterated over, how is that data sliced from the server-side data set, what operations can be performed on this data. People are often confused about the role of controllers because its primary responsibity (scoping) is actually a form of state, but one that doesn&#39;t really fit in the model layer. Misunderstanding the role of controllers often lead people to put all non-ORM state in the controller itself, for the sake of &quot;consistency&quot; (a pattern colloquially known as &quot;fat controllers&quot;).</p>
+<p>While fat controllers aren&#39;t necessarily bad per se, they can lead to some problems if you&#39;re not careful with their lifecycles. As a rule of thumb, controller classes should never be instantiated from a view.</p>
+<p>It&#39;s technically possible to have controllers that get reconsctructed by views on every redraw (using anonymous stateless objects is an example of it), but the extra abstraction layer provided by OOP classes lulls developers into the common OOP pattern of encapsulating state within the class itself.</p>
+<p>Since controllers in Mithril modules are nothing more than Javascript constructor functions, they can be as thin or as fat as a developer wants. The problem begins when a developer starts holding state in fat controllers for convenience instead of putting that state in view-models, and then proceeds to instantiate the constructor function from a view. Typically in Mithril, controllers are only meant to be initialized once in their lifecycle, but view functions run every time an event is triggered. When a controller is initialized by the view, it resets its internal state, which is almost never what the developer wants. So just don&#39;t do it.</p>
+<p>Another related issue that comes up often is incidental complexity arising from adding a controller for its own sake. This happens most commonly when someone has a list of things and they want to wrap each item in its own module. Remember that controllers are a scoping mechanism: items in a list are already scoped and ready to be consumed by views, so adding another layer of controllers adds unnecessary boilerplate.</p>
+<p>If you&#39;re running into issues with managing the lifecycle of sub-components that represent items in a list, then you probably should consider <a href="mapping-view-models.html">view model maps</a> instead. You can skip implementing the sub-module controller until your sub-module actually does need to be scoped on its own for another page where the sub-module exists but the list module does not.</p>
+<hr>
+<h3 id="4-premature-optimization">4. Premature optimization</h3>
+<p>A relatively common mistake is creating gigantic DOMs, and then spending inordinate amounts of time trying to one-up the framework&#39;s rendering algorithm. The performance of all algorithms degrade as the size of data increases, and even the fastest algorithms can only run as fast as the hardware they run on. Rendering tens of thousands of elements on a page will be slow with any framework.</p>
+<p>Rather than spending time fighting against the global nature of Mithril&#39;s virtual dom diff algorithm, it&#39;s usually more productive to think of ways to reduce the size of the DOM. Large tables are a classic example: their rendering performance degrade linearly as more rows and columns are displayed, but no human being can reasonably wade through thousands of rows filled with tabular data. Rather than spending time fighting the rendering algorithm (which is not even the culprit of the slowness), it&#39;s a lot more productive to implement pagination and search / filtering: doing so improves performance (both on redraws AND on page load), AND it improves usability as well.</p>
+<hr>
+<h3 id="conclusion">Conclusion</h3>
+<p>Many mistakes that people make when starting out with Mithril are often related to years of old habits, or by lack of experience with javascript (or even programming in general). While there will inevitably those who misunderstand one or another small aspect of Mithril itself, I think the minimalist nature of the framework and the amount of documentation and public forums available are sufficient enough that the only problems left to pay attention to are those related to the general programming discipline. I hope this article helps you hone high-level application development skills, regardless of whether you end up using Mithril ten years from now or not.</p>
+
 			]]></description>
 		</item>
 		<item>

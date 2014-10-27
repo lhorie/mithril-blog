@@ -19,7 +19,64 @@
 				<div class="container">
 					<div class="row">
 						<div class="col(9,9,12)" style="padding-right:50px;">
-							{DOC}
+							<h2 id="module-partial-application">Module partial application</h2>
+<p>Today&#39;s article will be about a short and sweet idiom.</p>
+<p>In Mithril modules, controllers are class constructors, which means that in order to manually use them, you need to instantiate them.</p>
+<p>This is required in order to provide contextualization to modules (i.e. the ability to say when a module gets created and when it gets destroyed), but having to remember to pass controller instances to views can get a little cumbersome once you start breaking down a big app into a lot of modules:</p>
+<pre><code class="lang-javascript">var root = {}
+
+root.controller = function() {
+    this.search = new search.controller()
+    this.filters = new filters.controller()
+    this.list = new list.controller()
+}
+
+root.view = function(ctrl) {
+    search.view(ctrl.search)
+    filters.view(ctrl.filters)
+    list.view(ctrl.list)
+}
+</code></pre>
+<p>A simple way to optimize this is to use <em>partial application</em> to pre-bind a controller instance:</p>
+<pre><code class="lang-javascript">var submodule = function(module, args) {
+    return module.view.bind(this, new module.controller(args))
+}
+</code></pre>
+<p>This returns a view function with the controller already passed into it. We can then create references to that in the root controller instead:</p>
+<pre><code class="lang-javascript">root.controller = function() {
+    this.search = submodule(search)
+    this.filters = submodule(filters)
+    this.list = submodule(list)
+}
+
+root.view = function(ctrl) {
+    ctrl.search(),
+    ctrl.filters(),
+    ctrl.list()
+}
+</code></pre>
+<p>Just remember that controllers should never be instantiated from views (<a href="http://lhorie.github.io/mithril/components.html">as per the documentation</a>), which means you should never call <code>submodule</code> from a view.</p>
+<hr>
+<h3 id="shouldn-t-we-be-using-view-models-">Shouldn&#39;t we be using view-models?</h3>
+<p>If you read that documentation page through to the end, you&#39;ll see I talk about moving logic out of controllers into view models.</p>
+<p>But that doesn&#39;t mean controllers should just be abolished altogether. One case where nesting components is necessary is when dealing with dynamic or extensible component placement, i.e. when you have a container module where different modules might be dropped in. The classical example is a dashboard where users can customize what widgets show up.</p>
+<p>The benefit of using the trick above is that you only need one variable to hold your module instance instead of two:</p>
+<pre><code>//without using the partial application trick
+var dashboard = {}
+
+dashboard.controller = function(innerModule) {
+    this.innerController = new innerModule.controller()
+    this.innerView = innerModudle.view
+}
+
+//using it
+var dashboard = {}
+
+dashboard.controller = function(innerModule) {
+    this.innerView = submodule(innerModule)
+}
+</code></pre><p>I hope you&#39;ll find this trick useful.</p>
+
 							
 							<hr />
 							
