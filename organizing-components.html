@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Mithril</title>
+		<link href="lib/prism/prism.css" rel="stylesheet" />
+		<link href="style.css" rel="stylesheet" />
+		<link href="feed.xml" rel="alternate" title="Mithril Blog feed" type="application/atom+xml" />
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<a href="index.html" class="logo"><span>&#9675;</span> Learn Mithril</a>
+				<a href="http://lhorie.github.io/mithril" >Main Site</a>
+				<a href="index.html" >Articles</a>
+			</nav>
+		</header>
+		<main>
+			<section class="content">
+				<div class="container">
+					<div class="row">
+						<div class="col(9,9,12)" style="padding-right:50px;">
+							<h2 id="organizing-components">Organizing components</h2>
+<p>One requirement that I commonly run into is the ability to filter a list of things. Not just filtering an array, but filtering in the sense of a user specifying some criteria, and a list of things on screen updating to become more relevant as a result. Think Google&#39;s search result page.</p>
+<p>In this article we&#39;ll look at one way of implementing a client-side filter.</p>
+<p>First we need to decide roughly where we can separate concerns: usually the most logical way of breaking up the view is to have one template for the list of things and another for the filters, plus a top level component to glue everything together. But once we&#39;ve decided that, there are many different ways in which we could actually implement our components, and some ways lend themselves to be more tightly coupled than others. Ideally, we&#39;d like the sub-components to be as agnostic about the rest of the world as possible. Conversely, we want the top level component to specify what sub-components exist and how they interact with each other.</p>
+<p>One may argue that then, the top component is tightly coupled. That&#39;s true and in fact it&#39;s a necessity: there&#39;s simply no way to have decoupled components talking to each other without some mechanism that ties them together into a context. This is the purpose of the top component.</p>
+<pre><code class="lang-javascript">//top level component
+var things = {}
+
+things.controller = function() {}
+things.view = function(ctrl) {
+    m(&quot;.row&quot;, [
+        m(&quot;.col-md-2&quot;, [
+            filter.view(ctrl.filter)
+        ]),
+        m(&quot;.col-md-10&quot;, [
+            list.view(ctrl.list)
+        ])
+    ])
+}
+
+//filter
+var filter = {}
+filter.view = function() {}
+
+//list
+var list = {}
+list.view = function() {}
+</code></pre>
+<p>Notice that the structural grid markup is in the top level component (I&#39;m using Bootstrap CSS classes in this case). As you get into refactoring more repetitive templates, you might be tempted to start putting this type of code in the subtemplates, but from a maintenance perspective, it&#39;s a lot easier to reason about the structure of the grid when the entire structure is in one place, rather than scattered around different functions. In addition, having this markup at the top level template means that each of our subtemplates is clean (and therefore easier to reuse)</p>
+<p>Also, note that we&#39;re using <code>ctrl.filter</code> and <code>ctrl.list</code> in the view even though we haven&#39;t defined them yet. We&#39;ll get to these later on.</p>
+<hr>
+<h3 id="the-list">The list</h3>
+<p>The list will need to be populated with data. So let&#39;s create a model to handle that:</p>
+<pre><code class="lang-javascript">var Thing = {}
+Thing.list = function() {
+    return m.request({method: &quot;GET&quot;, url: &quot;/api/things&quot;})
+}
+</code></pre>
+<p>Next, we use a controller to expose this data to a view.</p>
+<pre><code>list.controller = function(options) {
+    this.items = Thing.list()
+    this.visible = options.visible
+}
+</code></pre><p>The <code>Thing.list</code> method ajaxes some JSON data and returns a promise that asynchronously resolves to the response data. So in the view, <code>ctrl.items</code> will hold the data that came back from the web service.</p>
+<p>The <code>visible</code> property will be used to determine which of the items are visible on screen. This function will be passed to <code>Array.prototype.filter</code>, so it&#39;ll take an item as the argument and expect a boolean as the return value.</p>
+<p>Next, let&#39;s create the template to display our list:</p>
+<pre><code class="lang-javascript">list.view = function(ctrl) {
+    return m(&quot;table&quot;, [
+        ctrl.items().filter(ctrl.visible).map(function(item) {
+            return m(&quot;tr&quot;, [
+                m(&quot;td&quot;, item.id),
+                m(&quot;td&quot;, item.name)
+            ])
+        })
+    ])
+}
+</code></pre>
+<p>The code above creates a table and iterates over the array in <code>items</code>. It filters out items based on the <code>ctrl.visible</code> function and displays table rows for the items that are visible.</p>
+<hr>
+<h3 id="the-filter">The filter</h3>
+<p>Let&#39;s create a search input.</p>
+<pre><code class="lang-javascript">filter.controller = function(options) {
+    this.searchTerm = m.prop(&quot;&quot;)
+}
+</code></pre>
+<p>Here we created a controller that has a member called <code>searchTerm</code>. We&#39;ll be using this getter-setter to store the value of the search input.</p>
+<p>Next, let&#39;s create the template for the filter.</p>
+<pre><code class="lang-javascript">filter.view = function(ctrl) {
+    return m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.searchTerm)})
+}
+</code></pre>
+<p>The code above simply defines a text input that populates <code>ctrl.searchTerm</code> as the user types. By using <code>m.withAttr</code>, we extract the <code>value</code> attribute of the input and pass it as the argument to <code>ctrl.searchTerm</code> when an <code>oninput</code> event is triggered.</p>
+<hr>
+<h3 id="putting-things-together">Putting things together</h3>
+<p>Let&#39;s go back to our top level controller. Here we need to instantiate each of our sub-module controllers. </p>
+<pre><code class="lang-javascript">things.controller = function() {
+    var ctrl = this
+
+    ctrl.list = new list.controller({
+        visible: function(item) {
+            return item.name.indexOf(ctrl.filter.searchTerm()) &gt; -1
+        }
+    })
+
+    ctrl.filter = new filter.controller()
+}
+</code></pre>
+<p>As you may recall, we needed to define <code>ctrl.filter</code> and <code>ctrl.list</code>, because we were using them in the top level template as the controllers for the sub-views.</p>
+<p>Another thing to remember was that the <code>list</code> controller can receive a <code>visible</code> argument. This option determines how the items in the list are filtered.</p>
+<p>The implementation of <code>visible</code> is straightforward: if the item name contains the search term, then the item is visible.</p>
+<p>We can now run our code:</p>
+<pre><code class="lang-javascript">//model
+var Thing = {}
+Thing.list = function() {
+    return m.request({method: &quot;GET&quot;, url: &quot;/api/things&quot;})
+}
+
+//top level component
+var things = {}
+
+things.controller = function() {
+    var ctrl = this
+
+    ctrl.list = new list.controller({
+        visible: function(item) {
+            return item.name.indexOf(ctrl.filter.searchTerm()) &gt; -1
+        }
+    })
+
+    ctrl.filter = new filter.controller()
+}
+things.view = function(ctrl) {
+    m(&quot;.row&quot;, [
+        m(&quot;.col-md-2&quot;, [
+            filter.view(ctrl.filter)
+        ]),
+        m(&quot;.col-md-10&quot;, [
+            list.view(ctrl.list)
+        ])
+    ])
+}
+
+//filter
+var filter = {}
+filter.controller = function(options) {
+    this.searchTerm = m.prop(&quot;&quot;)
+}
+filter.view = function(ctrl) {
+    return m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.searchTerm)})
+}
+
+//list
+var list = {}
+list.controller = function(options) {
+    this.items = Thing.list()
+    this.visible = options.visible
+}
+list.view = function(ctrl) {
+    return m(&quot;table&quot;, [
+        ctrl.items().filter(ctrl.visible).map(function(item) {
+            return m(&quot;tr&quot;, [
+                m(&quot;td&quot;, item.id),
+                m(&quot;td&quot;, item.name)
+            ])
+        })
+    ])
+}
+
+//run
+m.module(document.body, things)
+</code></pre>
+<hr>
+<h3 id="-pshaw-i-could-write-that-in-less-lines-of-code-">&quot;Pshaw, I could write that in less lines of code!&quot;</h3>
+<p>Our example is admittedly pretty simple, and it&#39;s very much possible to merge everything into the <code>things</code> module and end up with less code than we did. Likewise, it&#39;s also possible to add more code to make modules more pure and abstract.</p>
+<p>The point of this article, though, is primarily to show one way of breaking larger modules into smaller ones. Organizing code in the way we did allows us to reuse the sub-components: the <code>filter</code> module is only concerned with what the user types in the search input, and the <code>list</code> module can be filtered in any way we desire. The <code>things</code> module is what glues the sub-components together and specifies how they interact with each other in the context of <code>things</code>.</p>
+<p>If you&#39;ve been passing instances of parent controllers to child components, now you know how to re-organize code in a less tightly coupled way.</p>
+
+							
+							<hr />
+							
+							<div id="disqus_thread"></div>
+							<script type="text/javascript">
+							/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+							var disqus_shortname = 'mithriljs'; // required: replace example with your forum shortname
+
+							/* * * DON'T EDIT BELOW THIS LINE * * */
+							(function() {
+							var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+							dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+							(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+							})();
+							</script>
+							<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+							<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+						</div>
+						<div class="col(3,3,12)">
+							<h4>Latest Articles</h4>
+							<ul>
+								<li><a href="organizing-components.html">Organizing components</a></li>
+								<li><a href="module-partial-application.html">Module partial application</a></li>
+								<li><a href="common-mistakes.html">Common mistakes</a></li>
+								<li><a href="mapping-view-models.html">Mapping view-models</a></li>
+								<li><a href="decreasing-cognitive-load.html">Decreasing cognitive load</a></li>
+								<li><a href="a-spreadsheet-in-60-lines-of-javascript.html">A spreadsheet in 60 lines of Javascript</a></li>
+							</ul>
+							<hr />
+							<ul><li><a href="feed.xml">RSS Feed</a></li></ul>
+							<hr />
+							
+							<iframe src="http://ghbtns.com/github-btn.html?user=lhorie&repo=mithril.js&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<br /><br />
+							<a href="https://twitter.com/share" class="twitter-share-button" data-via="LeoHorie">Tweet</a>
+							<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+							<br /><br />
+							<a href="http://flattr.com/thing/2778375/lhoriemithril-js-on-GitHub" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr" title="Flattr" border="0" /></a>
+						</div>
+					</div>
+   
+				</div>
+			</section>
+		</main>
+		<footer>
+			<div class="container">
+				&copy; 2014 Leo Horie
+			</div>
+		</footer>
+		<script src="lib/prism/prism.js"></script>
+	</body>
+</html>
