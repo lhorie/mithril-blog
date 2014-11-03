@@ -8,6 +8,8 @@ First we need to decide roughly where we can separate concerns: usually the most
 
 One may argue that then, the top component is tightly coupled. That's true and in fact it's a necessity: there's simply no way to have decoupled components talking to each other without some mechanism that ties them together into a context. This is the purpose of the top component.
 
+Anyways, let's start by creating skeletons for our components.
+
 ```javascript
 //top level component
 var things = {}

@@ -13,6 +13,7 @@
 <p>In this article we&#39;ll look at one way of implementing a client-side filter.</p>
 <p>First we need to decide roughly where we can separate concerns: usually the most logical way of breaking up the view is to have one template for the list of things and another for the filters, plus a top level component to glue everything together. But once we&#39;ve decided that, there are many different ways in which we could actually implement our components, and some ways lend themselves to be more tightly coupled than others. Ideally, we&#39;d like the sub-components to be as agnostic about the rest of the world as possible. Conversely, we want the top level component to specify what sub-components exist and how they interact with each other.</p>
 <p>One may argue that then, the top component is tightly coupled. That&#39;s true and in fact it&#39;s a necessity: there&#39;s simply no way to have decoupled components talking to each other without some mechanism that ties them together into a context. This is the purpose of the top component.</p>
+<p>Anyways, let&#39;s start by creating skeletons for our components.</p>
 <pre><code class="lang-javascript">//top level component
 var things = {}
 
