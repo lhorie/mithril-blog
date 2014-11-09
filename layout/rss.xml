@@ -5,10 +5,174 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Drag-n-drop file uploads</title>
+			<link>http://lhorie.github.io/mithril-blog/drag-n-drop-file-uploads.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Organizing components</title>
 			<link>http://lhorie.github.io/mithril-blog/organizing-components.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="organizing-components">Organizing components</h2>
+<p>One requirement that I commonly run into is the ability to filter a list of things. Not just filtering an array, but filtering in the sense of a user specifying some criteria, and a list of things on screen updating to become more relevant as a result. Think Google&#39;s search result page.</p>
+<p>In this article we&#39;ll look at one way of implementing a client-side filter.</p>
+<p>First we need to decide roughly where we can separate concerns: usually the most logical way of breaking up the view is to have one template for the list of things and another for the filters, plus a top level component to glue everything together. But once we&#39;ve decided that, there are many different ways in which we could actually implement our components, and some ways lend themselves to be more tightly coupled than others. Ideally, we&#39;d like the sub-components to be as agnostic about the rest of the world as possible. Conversely, we want the top level component to specify what sub-components exist and how they interact with each other.</p>
+<p>One may argue that then, the top component is tightly coupled. That&#39;s true and in fact it&#39;s a necessity: there&#39;s simply no way to have decoupled components talking to each other without some mechanism that ties them together into a context. This is the purpose of the top component.</p>
+<p>Anyways, let&#39;s start by creating skeletons for our components.</p>
+<pre><code class="lang-javascript">//top level component
+var things = {}
+
+things.controller = function() {}
+things.view = function(ctrl) {
+    m(&quot;.row&quot;, [
+        m(&quot;.col-md-2&quot;, [
+            filter.view(ctrl.filter)
+        ]),
+        m(&quot;.col-md-10&quot;, [
+            list.view(ctrl.list)
+        ])
+    ])
+}
+
+//filter
+var filter = {}
+filter.view = function() {}
+
+//list
+var list = {}
+list.view = function() {}
+</code></pre>
+<p>Notice that the structural grid markup is in the top level component (I&#39;m using Bootstrap CSS classes in this case). As you get into refactoring more repetitive templates, you might be tempted to start putting this type of code in the subtemplates, but from a maintenance perspective, it&#39;s a lot easier to reason about the structure of the grid when the entire structure is in one place, rather than scattered around different functions. In addition, having this markup at the top level template means that each of our subtemplates is clean (and therefore easier to reuse)</p>
+<p>Also, note that we&#39;re using <code>ctrl.filter</code> and <code>ctrl.list</code> in the view even though we haven&#39;t defined them yet. We&#39;ll get to these later on.</p>
+<hr>
+<h3 id="the-list">The list</h3>
+<p>The list will need to be populated with data. So let&#39;s create a model to handle that:</p>
+<pre><code class="lang-javascript">var Thing = {}
+Thing.list = function() {
+    return m.request({method: &quot;GET&quot;, url: &quot;/api/things&quot;})
+}
+</code></pre>
+<p>Next, we use a controller to expose this data to a view.</p>
+<pre><code class="lang-javascript">list.controller = function(options) {
+    this.items = Thing.list()
+    this.visible = options.visible
+}
+</code></pre><p>The <code>Thing.list</code> method ajaxes some JSON data and returns a promise that asynchronously resolves to the response data. So in the view, <code>ctrl.items</code> will hold the data that came back from the web service.</p>
+<p>The <code>visible</code> property will be used to determine which of the items are visible on screen. This function will be passed to <code>Array.prototype.filter</code>, so it&#39;ll take an item as the argument and expect a boolean as the return value.</p>
+<p>Next, let&#39;s create the template to display our list:</p>
+<pre><code class="lang-javascript">list.view = function(ctrl) {
+    return m(&quot;table&quot;, [
+        ctrl.items().filter(ctrl.visible).map(function(item) {
+            return m(&quot;tr&quot;, [
+                m(&quot;td&quot;, item.id),
+                m(&quot;td&quot;, item.name)
+            ])
+        })
+    ])
+}
+</code></pre>
+<p>The code above creates a table and iterates over the array in <code>items</code>. It filters out items based on the <code>ctrl.visible</code> function and displays table rows for the items that are visible.</p>
+<hr>
+<h3 id="the-filter">The filter</h3>
+<p>Let&#39;s create a search input.</p>
+<pre><code class="lang-javascript">filter.controller = function(options) {
+    this.searchTerm = m.prop(&quot;&quot;)
+}
+</code></pre>
+<p>Here we created a controller that has a member called <code>searchTerm</code>. We&#39;ll be using this getter-setter to store the value of the search input.</p>
+<p>Next, let&#39;s create the template for the filter.</p>
+<pre><code class="lang-javascript">filter.view = function(ctrl) {
+    return m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.searchTerm)})
+}
+</code></pre>
+<p>The code above simply defines a text input that populates <code>ctrl.searchTerm</code> as the user types. By using <code>m.withAttr</code>, we extract the <code>value</code> attribute of the input and pass it as the argument to <code>ctrl.searchTerm</code> when an <code>oninput</code> event is triggered.</p>
+<hr>
+<h3 id="putting-things-together">Putting things together</h3>
+<p>Let&#39;s go back to our top level controller. Here we need to instantiate each of our sub-module controllers. </p>
+<pre><code class="lang-javascript">things.controller = function() {
+    var ctrl = this
+
+    ctrl.list = new list.controller({
+        visible: function(item) {
+            return item.name.indexOf(ctrl.filter.searchTerm()) &gt; -1
+        }
+    })
+
+    ctrl.filter = new filter.controller()
+}
+</code></pre>
+<p>As you may recall, we needed to define <code>ctrl.filter</code> and <code>ctrl.list</code>, because we were using them in the top level template as the controllers for the sub-views.</p>
+<p>Another thing to remember was that the <code>list</code> controller can receive a <code>visible</code> argument. This option determines how the items in the list are filtered.</p>
+<p>The implementation of <code>visible</code> is straightforward: if the item name contains the search term, then the item is visible.</p>
+<p>We can now run our code:</p>
+<pre><code class="lang-javascript">//model
+var Thing = {}
+Thing.list = function() {
+    return m.request({method: &quot;GET&quot;, url: &quot;/api/things&quot;})
+}
+
+//top level component
+var things = {}
+
+things.controller = function() {
+    var ctrl = this
+
+    ctrl.list = new list.controller({
+        visible: function(item) {
+            return item.name.indexOf(ctrl.filter.searchTerm()) &gt; -1
+        }
+    })
+
+    ctrl.filter = new filter.controller()
+}
+things.view = function(ctrl) {
+    m(&quot;.row&quot;, [
+        m(&quot;.col-md-2&quot;, [
+            filter.view(ctrl.filter)
+        ]),
+        m(&quot;.col-md-10&quot;, [
+            list.view(ctrl.list)
+        ])
+    ])
+}
+
+//filter
+var filter = {}
+filter.controller = function(options) {
+    this.searchTerm = m.prop(&quot;&quot;)
+}
+filter.view = function(ctrl) {
+    return m(&quot;input&quot;, {oninput: m.withAttr(&quot;value&quot;, ctrl.searchTerm)})
+}
+
+//list
+var list = {}
+list.controller = function(options) {
+    this.items = Thing.list()
+    this.visible = options.visible
+}
+list.view = function(ctrl) {
+    return m(&quot;table&quot;, [
+        ctrl.items().filter(ctrl.visible).map(function(item) {
+            return m(&quot;tr&quot;, [
+                m(&quot;td&quot;, item.id),
+                m(&quot;td&quot;, item.name)
+            ])
+        })
+    ])
+}
+
+//run
+m.module(document.body, things)
+</code></pre>
+<hr>
+<h3 id="-pshaw-i-could-write-that-in-less-lines-of-code-">&quot;Pshaw, I could write that in less lines of code!&quot;</h3>
+<p>Our example is admittedly pretty simple, and it&#39;s very much possible to merge everything into the <code>things</code> module and end up with less code than we did. Likewise, it&#39;s also possible to add more code to make modules more pure and abstract.</p>
+<p>The point of this article, though, is primarily to show one way of breaking larger modules into smaller ones. Organizing code in the way we did allows us to reuse the sub-components: the <code>filter</code> module is only concerned with what the user types in the search input, and the <code>list</code> module can be filtered in any way we desire. The <code>things</code> module is what glues the sub-components together and specifies how they interact with each other in the context of <code>things</code>.</p>
+<p>If you&#39;ve been passing instances of parent controllers to child components, now you know how to re-organize code in a less tightly coupled way.</p>
+
 			]]></description>
 		</item>
 		<item>
@@ -57,7 +221,7 @@ root.view = function(ctrl) {
 <p>If you read that documentation page through to the end, you&#39;ll see I talk about moving logic out of controllers into view models.</p>
 <p>But that doesn&#39;t mean controllers should just be abolished altogether. One case where nesting components is necessary is when dealing with dynamic or extensible component placement, i.e. when you have a container module where different modules might be dropped in. The classical example is a dashboard where users can customize what widgets show up.</p>
 <p>The benefit of using the trick above is that you only need one variable to hold your module instance instead of two:</p>
-<pre><code>//without using the partial application trick
+<pre><code class="lang-javascript">//without using the partial application trick
 var dashboard = {}
 
 dashboard.controller = function(innerModule) {
@@ -1013,7 +1177,7 @@ var myView = function() {
 <hr>
 <h3 id="handling-conflicts">Handling conflicts</h3>
 <p>A clever reader might notice that this transformer suffers from one problem - it can clobber attributes. For example: </p>
-<pre><code>mx(&quot;button&quot;, {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, &quot;Remove&quot;)
+<pre><code class="lang-javascript">mx(&quot;button&quot;, {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, &quot;Remove&quot;)
 </code></pre><p>In the snippet above, <code>cautions</code> assigns a function to the <code>onclick</code> attribute, which means that <code>ctrl.doSomethingElse</code> does not run when we click on the button.</p>
 <p>Fortunately, javascript is a dynamic language, which allows us to use <strong>monkeypatching</strong> to easily solve this problem:</p>
 <pre><code class="lang-javascript">var monkeypatch = function(f1, f2) {

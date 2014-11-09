@@ -58,7 +58,7 @@ But that doesn't mean controllers should just be abolished altogether. One case 
 
 The benefit of using the trick above is that you only need one variable to hold your module instance instead of two:
 
-```
+```javascript
 //without using the partial application trick
 var dashboard = {}
 

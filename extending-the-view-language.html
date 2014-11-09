@@ -64,8 +64,9 @@ var myView = function() {
 <hr>
 <h3 id="handling-conflicts">Handling conflicts</h3>
 <p>A clever reader might notice that this transformer suffers from one problem - it can clobber attributes. For example: </p>
-<pre><code>mx(&quot;button&quot;, {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, &quot;Remove&quot;)
-</code></pre><p>In the snippet above, <code>cautions</code> assigns a function to the <code>onclick</code> attribute, which means that <code>ctrl.doSomethingElse</code> does not run when we click on the button.</p>
+<pre><code class="lang-javascript">mx(&quot;button&quot;, {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, &quot;Remove&quot;)
+</code></pre>
+<p>In the snippet above, <code>cautions</code> assigns a function to the <code>onclick</code> attribute, which means that <code>ctrl.doSomethingElse</code> does not run when we click on the button.</p>
 <p>Fortunately, javascript is a dynamic language, which allows us to use <strong>monkeypatching</strong> to easily solve this problem:</p>
 <pre><code class="lang-javascript">var monkeypatch = function(f1, f2) {
     return function() {
@@ -119,6 +120,7 @@ var customAttrs = {
 						<div class="col(3,3,12)">
 							<h4>Latest Articles</h4>
 							<ul>
+								<li><a href="drag-n-drop-file-uploads.html">Drag-n-drop file uploads</a></li>
 								<li><a href="organizing-components.html">Organizing components</a></li>
 								<li><a href="module-partial-application.html">Module partial application</a></li>
 								<li><a href="common-mistakes.html">Common mistakes</a></li>

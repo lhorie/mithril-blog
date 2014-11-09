@@ -54,7 +54,7 @@ Thing.list = function() {
 
 Next, we use a controller to expose this data to a view.
 
-```
+```javascript
 list.controller = function(options) {
 	this.items = Thing.list()
 	this.visible = options.visible

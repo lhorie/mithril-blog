@@ -61,7 +61,7 @@ root.view = function(ctrl) {
 <p>If you read that documentation page through to the end, you&#39;ll see I talk about moving logic out of controllers into view models.</p>
 <p>But that doesn&#39;t mean controllers should just be abolished altogether. One case where nesting components is necessary is when dealing with dynamic or extensible component placement, i.e. when you have a container module where different modules might be dropped in. The classical example is a dashboard where users can customize what widgets show up.</p>
 <p>The benefit of using the trick above is that you only need one variable to hold your module instance instead of two:</p>
-<pre><code>//without using the partial application trick
+<pre><code class="lang-javascript">//without using the partial application trick
 var dashboard = {}
 
 dashboard.controller = function(innerModule) {
@@ -75,7 +75,8 @@ var dashboard = {}
 dashboard.controller = function(innerModule) {
     this.innerView = submodule(innerModule)
 }
-</code></pre><p>I hope you&#39;ll find this trick useful.</p>
+</code></pre>
+<p>I hope you&#39;ll find this trick useful.</p>
 
 							
 							<hr />
@@ -98,6 +99,7 @@ dashboard.controller = function(innerModule) {
 						<div class="col(3,3,12)">
 							<h4>Latest Articles</h4>
 							<ul>
+								<li><a href="drag-n-drop-file-uploads.html">Drag-n-drop file uploads</a></li>
 								<li><a href="organizing-components.html">Organizing components</a></li>
 								<li><a href="module-partial-application.html">Module partial application</a></li>
 								<li><a href="common-mistakes.html">Common mistakes</a></li>

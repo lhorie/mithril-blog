@@ -59,11 +59,12 @@ Thing.list = function() {
 }
 </code></pre>
 <p>Next, we use a controller to expose this data to a view.</p>
-<pre><code>list.controller = function(options) {
+<pre><code class="lang-javascript">list.controller = function(options) {
     this.items = Thing.list()
     this.visible = options.visible
 }
-</code></pre><p>The <code>Thing.list</code> method ajaxes some JSON data and returns a promise that asynchronously resolves to the response data. So in the view, <code>ctrl.items</code> will hold the data that came back from the web service.</p>
+</code></pre>
+<p>The <code>Thing.list</code> method ajaxes some JSON data and returns a promise that asynchronously resolves to the response data. So in the view, <code>ctrl.items</code> will hold the data that came back from the web service.</p>
 <p>The <code>visible</code> property will be used to determine which of the items are visible on screen. This function will be passed to <code>Array.prototype.filter</code>, so it&#39;ll take an item as the argument and expect a boolean as the return value.</p>
 <p>Next, let&#39;s create the template to display our list:</p>
 <pre><code class="lang-javascript">list.view = function(ctrl) {
@@ -198,6 +199,7 @@ m.module(document.body, things)
 						<div class="col(3,3,12)">
 							<h4>Latest Articles</h4>
 							<ul>
+								<li><a href="drag-n-drop-file-uploads.html">Drag-n-drop file uploads</a></li>
 								<li><a href="organizing-components.html">Organizing components</a></li>
 								<li><a href="module-partial-application.html">Module partial application</a></li>
 								<li><a href="common-mistakes.html">Common mistakes</a></li>

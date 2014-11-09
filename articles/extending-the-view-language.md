@@ -65,7 +65,7 @@ In the code above, the button becomes visible when the `buttonVisible` getter-se
 
 A clever reader might notice that this transformer suffers from one problem - it can clobber attributes. For example: 
 
-```
+```javascript
 mx("button", {cautions: ctrl.remove, onclick: ctrl.doSomethingElse}, "Remove")
 ```
 
