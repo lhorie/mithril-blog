@@ -5,10 +5,148 @@
 		<description>A Javascript framework for building brilliant applications</description>
 		<link>http://lhorie.github.io/mithril-blog/</link>
 		<item>
+			<title>Thoughts on performance</title>
+			<link>http://lhorie.github.io/mithril-blog/thoughts-on-performance.html</link>
+			<description><![CDATA[
+{DOC}
+			]]></description>
+		</item>
+		<item>
 			<title>Drag-n-drop file uploads</title>
 			<link>http://lhorie.github.io/mithril-blog/drag-n-drop-file-uploads.html</link>
 			<description><![CDATA[
-{DOC}
+<h2 id="drag-n-drop-file-uploads-with-mithril">Drag n Drop file uploads with Mithril</h2>
+<p>The other day, a co-worker was asking me for some help porting an HTML5 drag-n-drop file upload directive from Angular to Mithril.</p>
+<p>At a glance it may seem like a pretty difficult task for a backend guy who just started learning Mithril. As it turns out, there&#39;s a lot domain-specific knowledge required, but the Mithril aspect is not particularly daunting.</p>
+<p>So, let&#39;s see how this would work. First, let&#39;s get the plain vanilla drag-n-drop to work outside of Mithril.</p>
+<p>The drag-n-drop API requires some amount of setup to get going. On the UI side, we want to visually indicate to the user that they have dragged something over a droppable area (and likewise, reset the visuals if the user drops or drags away from the droppable area). In addition we want to run <em>something</em> once a file is dropped.</p>
+<p>So for starters, we need to define events to handle all of these cases.</p>
+<pre><code class="lang-javascript">var element = document.body //let&#39;s just use body for now
+
+element.addEventListener(&quot;dragover&quot;, activate)
+element.addEventListener(&quot;dragleave&quot;, deactivate)
+element.addEventListener(&quot;dragend&quot;, deactivate)
+element.addEventListener(&quot;drop&quot;, deactivate)
+element.addEventListener(&quot;drop&quot;, update)
+window.addEventListener(&quot;blur&quot;, deactivate)
+
+function activate(e) {
+    e.preventDefault()
+}
+function deactivate() {}
+function update(e) {
+    e.preventDefault()
+}
+</code></pre>
+<p>The boilerplate above takes care of setting up all the relevant event handlers, but for now each event just calls empty functions. The <code>activate</code> and <code>update</code> functions need to call <code>preventDefault</code> in order for drag and drop to work correctly.</p>
+<p>Let&#39;s make things a bit more functional. Since the files are only available once the <code>update</code> event is triggered, we need to expose the data with another event handler:</p>
+<pre><code class="lang-javascript">function dragdrop(element, options) {
+    options = options || {}
+
+    element.addEventListener(&quot;dragover&quot;, activate)
+    element.addEventListener(&quot;dragleave&quot;, deactivate)
+    element.addEventListener(&quot;dragend&quot;, deactivate)
+    element.addEventListener(&quot;drop&quot;, deactivate)
+    element.addEventListener(&quot;drop&quot;, update)
+
+    function activate(e) {
+        e.preventDefault()
+    }
+    function deactivate() {}
+    function update(e) {
+        e.preventDefault()
+        if (typeof options.onchange == &quot;function&quot;) {
+            options.onchange((e.dataTransfer || e.target).files)
+        }
+    }
+}
+</code></pre>
+<p>Now we can start using our <code>dragdrop</code> function instead of needing to type all that boilerplate all the time:</p>
+<pre><code class="lang-javascript">dragdrop(document.body, {
+    onchange: function(files) {
+        console.log(files)
+    }
+})
+</code></pre>
+<p>Next, we need to create a function to upload files. In an MVC setting, this kind of concern belongs in the model layer. So let&#39;s create a model method to deal with file uploads.</p>
+<pre><code class="lang-javascript">var Uploader = {}
+
+Uploader.upload = function() {
+    //todo: upload files
+}
+</code></pre>
+<p>Let&#39;s suppose that we want to POST the files to the URL <code>/api/files</code>. The problem is that you can&#39;t just serialize a file into a regular HTTP request. Instead, we need to use the HTML5 <a href="https://developer.mozilla.org/en-US/docs/Web/API/FormData">FormData class</a>, which creates an object that can be sent via XMLHttpRequest, but encodes the request as <code>multipart/form-data</code>. In order to ajax a FormData instance instead of serializing data as JSON, we need to override <code>m.request</code>&#39;s default <code>serialize</code> option:</p>
+<pre><code class="lang-javascript">Uploader.upload = function(files) {
+    var formData = new FormData
+    for (var i = 0; i &lt; files.length; i++) {
+        formData.append(&quot;file&quot; + i, files[i])
+    }
+
+    return m.request({
+        method: &quot;POST&quot;,
+        url: &quot;/api/files&quot;,
+        data: formData,
+        //simply pass the FormData object intact to the underlying XMLHttpRequest, instead of JSON.stringify&#39;ing it
+        serialize: function(value) {return value}
+    })
+}
+</code></pre>
+<p>Now we are able to take our <code>dragdrop</code> function and use it with our model entity:</p>
+<pre><code>dragdrop(document.body, {onchange: Uploader.upload})
+</code></pre><p>You can verify that the code is working by dropping a file onto the page, and inspecting the request object.</p>
+<p><img src="images/upload-request.png" alt="File upload request body"></p>
+<hr>
+<h3 id="integrating-to-mithril">Integrating to Mithril</h3>
+<p>In Mithril, templates are made out of virtual DOM elements (i.e. javascript objects that represent DOM elements).</p>
+<p>The DOM elements themselves are only accessible from <code>config</code> functions in views. Let&#39;s hook our <code>dragdrop</code> function into a config:</p>
+<pre><code class="lang-javascript">//an uploader module
+var uploader = {}
+
+uploader.controller = function(options) {
+    return options
+}
+
+uploader.view = function(ctrl) {
+    return m(&quot;.uploader&quot;, {
+        config: function(element, isInitialized) {
+            if (!isInitialized) {
+                dragdrop(element, {onchange: ctrl.onchange})
+            }
+        }
+    })
+}
+</code></pre>
+<p>All we&#39;re doing here is calling the <code>dragdrop</code> function as we did before, but passing another event handler to it. This event handler will be defined by a parent component.</p>
+<p>Now this module can be used by another components:</p>
+<pre><code class="lang-javascript">var demo = {}
+
+demo.controller = function() {
+    return {
+        title: m.prop(&quot;Upload something&quot;),
+        uploader: submodule(uploader, {
+            onchange: Uploader.upload
+        })
+    }
+}
+
+demo.view = function(ctrl) {
+    return [
+        m(&quot;h1&quot;, ctrl.title()),
+        ctrl.uploader(),
+        m(&quot;p&quot;, &quot;more stuff&quot;)
+    ]
+}
+
+m.module(document.body, demo)
+</code></pre>
+<p>Notice we&#39;re using the <a href="http://lhorie.github.io/mithril-blog/module-partial-application.html"><code>submodule</code> helper from this article</a> to cut down on the amount of noise.</p>
+<p><a href="http://jsfiddle.net/2psha3v6/3/">You can see a running example of this code here</a></p>
+<hr>
+<h3 id="conclusion">Conclusion</h3>
+<p>As you play with this code, you&#39;ll likely want to add styling for when the user drags a file over the drop area, as well as remove the style when the user drag away from the drop area. This can be accomplished by adding and removing CSS classes in the <code>activate</code> and <code>deactivate</code> functions. I&#39;m leaving this as an exercise to the reader.</p>
+<p>In this article we saw how we can work our way from a simple library to full Mithril integration. Understanding this workflow is a key in learning how to integrate third-party libraries to Mithril, how to write reusable components and how to organize the flow of data across different components.</p>
+<p>And hopefully you&#39;ve also learned a thing or two about the nuts and bolts of the cool and flashy HTML 5 drag-n-drop API.</p>
+
 			]]></description>
 		</item>
 		<item>

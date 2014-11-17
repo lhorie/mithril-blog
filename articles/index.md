@@ -2,6 +2,7 @@
 
 Here you will find articles about cool things you can do with Mithril, and articles about related web application development topics.
 
+- [Thoughts on performance](thoughts-on-performance.html) - Nov 16, 2014
 - [Drag-n-drop file uploads](drag-n-drop-file-uploads.html) - Nov 09, 2014
 - [Organizing components](organizing-components.html) - Nov 02, 2014
 - [Module partial application](module-partial-application.html) - Oct 26, 2014
