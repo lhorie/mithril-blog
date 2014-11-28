@@ -34,15 +34,13 @@ function table(ctrl) {
             m(&quot;th&quot;, &quot;Budget&quot;),
             m(&quot;th&quot;, &quot;Actuals&quot;)
         ]),
-        m(&quot;tr&quot;, [
-            ctrl.data.map(function(item) {
-                return [
-                    m(&quot;td&quot;, item.name),
-                    m(&quot;td&quot;, item.budget),
-                    m(&quot;td&quot;, item.actuals)
-                ]
-            })
-        ])
+		ctrl.data.map(function(item) {
+			return m(&quot;tr&quot;, [
+				m(&quot;td&quot;, item.name),
+				m(&quot;td&quot;, item.budget),
+				m(&quot;td&quot;, item.actuals)
+			])
+		})
     ]);
 };
 </code></pre>

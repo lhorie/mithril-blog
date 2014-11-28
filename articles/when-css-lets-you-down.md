@@ -21,15 +21,13 @@ function table(ctrl) {
 			m("th", "Budget"),
 			m("th", "Actuals")
 		]),
-		m("tr", [
-			ctrl.data.map(function(item) {
-				return [
-					m("td", item.name),
-					m("td", item.budget),
-					m("td", item.actuals)
-				]
-			})
-		])
+		ctrl.data.map(function(item) {
+			return m("tr", [
+				m("td", item.name),
+				m("td", item.budget),
+				m("td", item.actuals)
+			])
+		})
 	]);
 };
 ```
