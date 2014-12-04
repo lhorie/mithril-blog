@@ -821,7 +821,7 @@ consume(ThirdPartyEntity, new ThirdPartyEntity({ThirdPartyEntityID: 1, Descripti
 <p>Short on time? <a href="examples/spreadsheet-improved.html">See it in action here</a></p>
 <hr>
 <p>Apps with terse code have a special place in my heart. Note that I said <em>terse</em>, not <em>clever</em>. Cleverness is a tendency to sacrifice code clarity and readability in order to push code size to be smaller (think code golfing). Being terse, on the other hand, is the practice of seeking simplicity in order to make code easier to understand. It implies looking for elegant solutions and avoiding over-engineering.</p>
-<p>One such app that looks particularly impressive is this <a href="examples/spreadsheet.html">spreadsheet</a>, written in a mere 30 lines of vanilla javascript.</p>
+<p>One such app that looks particularly impressive is this <a href="http://jsfiddle.net/ondras/hYfN3/">spreadsheet</a>, written in a mere 30 lines of vanilla javascript.</p>
 <p>I decided to write a version of it using <a href="http://lhorie.github.io/mithril">Mithril</a>. It may seem silly to require a framework (even if it&#39;s a really small one) to do something that has been proven to be doable without one, but the purpose of this exercise is precisely to get an idea of how much boilerplate would be required in order to implement the app using the Mithril framework.</p>
 <p>This is an important consideration. Frameworks usually require boilerplate code in order to work, and frameworks like Angular can get notoriously verbose. Verbosity can add various costs to development: extra typing required, steep learning curves, more mental baggage to carry when reading code.</p>
 <pre><code class="lang-javascript">//A simple, production-quality AngularJS factory
