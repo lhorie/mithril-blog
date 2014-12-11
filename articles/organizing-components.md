@@ -16,7 +16,7 @@ var things = {}
 
 things.controller = function() {}
 things.view = function(ctrl) {
-	m(".row", [
+	return m(".row", [
 		m(".col-md-2", [
 			filter.view(ctrl.filter)
 		]),
@@ -156,7 +156,7 @@ things.controller = function() {
 	ctrl.filter = new filter.controller()
 }
 things.view = function(ctrl) {
-	m(".row", [
+	return m(".row", [
 		m(".col-md-2", [
 			filter.view(ctrl.filter)
 		]),

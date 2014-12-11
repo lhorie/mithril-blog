@@ -30,7 +30,7 @@ var things = {}
 
 things.controller = function() {}
 things.view = function(ctrl) {
-    m(&quot;.row&quot;, [
+    return m(&quot;.row&quot;, [
         m(&quot;.col-md-2&quot;, [
             filter.view(ctrl.filter)
         ]),
@@ -133,7 +133,7 @@ things.controller = function() {
     ctrl.filter = new filter.controller()
 }
 things.view = function(ctrl) {
-    m(&quot;.row&quot;, [
+    return m(&quot;.row&quot;, [
         m(&quot;.col-md-2&quot;, [
             filter.view(ctrl.filter)
         ]),
