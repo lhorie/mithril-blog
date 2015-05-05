@@ -119,7 +119,7 @@ var loginWidget = function() {
 //standalone page
 var loginPage = {}
 loginPage.controller = function() { /*...*/ }
-loginWidget.view = mixinLayout(layout, nav, loginWidget)
+loginPage.view = mixinLayout(layout, nav, loginWidget)
 
 //as a component in another part of the app
 var anotherPlace = {}
