@@ -89,7 +89,7 @@ var view = function(ctrl) {
 	return m("ul", [
 		people.map(function(person) {
 			return m("li", {
-				key: id,
+				key: person.id,
 				onclick: ctrl.remove.bind(this, person)
 			}, person.name)
 		})
@@ -116,7 +116,7 @@ var view = function(ctrl) {
 	return m("ul", [
 		people.map(function(person) {
 			return m("li", {
-				key: id,
+				key: person.id,
 				onclick: ctrl.remove.bind(this, person),
 				config: fadesIn
 			}, person.name)
@@ -178,7 +178,7 @@ var view = function(ctrl) {
 	return m("ul", [
 		people.map(function(person) {
 			return m("li", {
-				key: id,
+				key: person.id,
 				onclick: fadesOut(ctrl.remove.bind(this, person)),
 				config: fadesIn
 			}, person.name)
