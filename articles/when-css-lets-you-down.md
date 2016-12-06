@@ -135,7 +135,7 @@ function highlightNegatives(root, parent) {
 	else if (root.children) {
 		highlightNegatives(root.children, root);
 	}
-	else if (typeof child == "string" && child.indexOf("($") === 0) {
+	else if (typeof root == "string" && root.indexOf("($") === 0) {
 		parent.attrs.class = "text-danger";
 	}
 	return root;
